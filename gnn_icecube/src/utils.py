@@ -223,7 +223,7 @@ def plot_roc_curve(fprs, tprs, experiment_dir, plot_name, performance):
   '''
   # Plot
   plt.clf()
-  plt.semilogx(fprs, tprs)
+  plt.plot(fprs,tprs) #plt.semilogx(fprs, tprs)
   # Zooms
   plt.xlim([10**-7,1.0])
   plt.ylim([0,1.0])

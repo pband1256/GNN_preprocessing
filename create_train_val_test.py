@@ -6,29 +6,31 @@ import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--nb_train",type=int,default=10,
-                    dest="nb_train",help="number of training sample")
+                    dest="nb_train",help="number of training files")
 parser.add_argument("-v", "--nb_val",type=int,default=10,
-                    dest="nb_val",help="number of validation sample")
+                    dest="nb_val",help="number of validation files")
 parser.add_argument("-e", "--nb_test",type=int,default=10,
-                    dest="nb_test",help="number of test sample")
+                    dest="nb_test",help="number of test files")
 parser.add_argument("-i", "--input",type=str,default="/mnt/scratch/lehieu1/training_files",
                     dest="inp",help="path to directory of input pickle files")
 parser.add_argument("-o", "--output",type=str,default="/mnt/scratch/lehieu1/training_files/processed",
                     dest="out",help="path to directory of output pickle files")
 args = parser.parse_args()
 
+# Open pickled .i3 files one by one and concatenate all data into master arrays
 def pickleList(fileList):
     first = True
     for fileName in fileList:
         try:
             with open(fileName,'rb') as f:
-                X, y, weights, event_id, filenames = pickle.load(f)
+                X, y, weights, event_id, filenames, energy = pickle.load(f)
             if first == True:
                 X_all = X
                 y_all = y
                 w_all = weights
                 e_all = event_id
                 f_all = filenames
+                E_all = energy
                 first = False
             else:
                 X_all = np.concatenate((X_all,X))
@@ -36,11 +38,17 @@ def pickleList(fileList):
                 w_all = np.concatenate((w_all,weights))
                 e_all = np.concatenate((e_all,event_id))
                 f_all = np.concatenate((f_all,filenames))
+                E_all = np.concatenate((E_all,energy))
         except ValueError or EOFError as e:
             print("Error: file "+fileName+" failed to pickle correctly. Skipping file")
             print(e)
             continue
-    return [X_all,y_all,w_all,e_all,f_all]
+
+    ####### Setting weights to 1
+    w_all = np.ones(np.shape(w_all))
+    ############################
+
+    return [X_all,y_all,w_all,e_all,f_all,E_all]
 
 # Shuffling ALL files in folder to make sure there's no systematic problem. Probably overkill.
 nb_total = args.nb_train + args.nb_val + args.nb_test
