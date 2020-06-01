@@ -22,7 +22,7 @@ parser.add_argument('-m','--multi',type=int,default=1,
 args = parser.parse_args()
 
 
-def loss_plot(ax,data,loss_type='train',multi=1,lrate=args.lrate,normalize=args.norm):
+def loss_plot(ax,data,loss_type='train',multi=1,lrate=args.lrate):
     if loss_type == 'train':
         loss_type = 'train_loss'
         ax.set_title("Training loss")

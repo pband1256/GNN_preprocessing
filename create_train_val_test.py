@@ -23,6 +23,19 @@ def mask_features(data,feature_ind=(3,4,5)):
         data[i][:,feature_ind] = 0
     return data
 
+# Masking coordinates of feature array (padding inactive DOMs with 0 for pulse data)
+def mask_coordinates(data):
+    coords = []
+    batch_size = np.shape(data)[0]
+    for i in range(batch_size):
+        coords.append(data[i][:,0:3])
+    coords_list = np.unique(np.concatenate(coords),axis=0)
+    
+    for i in range(batch_size):
+        inactive_DOMs = np.array([x for x in set(tuple(x) for x in coords_list) ^ set(tuple(x) for x in coords[i])])
+        data[i] = np.concatenate([np.concatenate([inactive_DOMs,np.zeros(np.shape(inactive_DOMs))],axis=1),data[i]])
+    return data
+
 # Open pickled .i3 files one by one and concatenate all data into master arrays
 def pickleList(fileList):
     first = True
@@ -53,7 +66,9 @@ def pickleList(fileList):
     ####### Setting weights to 1
     w_all = np.ones(np.shape(w_all))
     ####### Masking features
-    X_all = mask_features(X_all)
+    #X_all = mask_features(X_all)
+    ####### Masking coordinates
+    X_all = mask_coordinates(X_all)
 
     return [X_all,y_all,w_all,e_all,f_all,E_all]
 

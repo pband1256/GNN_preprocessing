@@ -21,7 +21,7 @@ NB_VAL=10000
 NB_TEST=10000
 
 # Experiment
-DATE= date +'%m%d%y'
+DATE=$(date +'%m%d%y')
 NAME="${DATE}_masked_features"
 EXTRA=''
 MULTI=0
