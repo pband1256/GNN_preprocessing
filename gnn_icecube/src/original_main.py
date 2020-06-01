@@ -70,7 +70,7 @@ def train(
           valid_loader
           ):
   optimizer = torch.optim.Adamax(net.parameters(), lr=args.lrate)
-  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=0.2,patience=20)
+  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max')
   # Nb epochs completed tracked in case training interrupted
   for i in range(args.nb_epochs_complete, args.nb_epoch):
     # Update learning rate in optimizer
@@ -105,7 +105,7 @@ def train(
     utils.save_args(experiment_dir, args)
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
-    if args.lrate < 10**-5:
+    if args.lrate < 10**-6:
         logging.warning("Minimum learning rate reched.")
         break
 

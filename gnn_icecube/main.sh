@@ -12,17 +12,19 @@
 
 #mkdir -p slurm_out
 # Dataset
-TRAINFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_withenergy/train_file.pkl'
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_withenergy/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_withenergy/test_file.pkl'
+TRAINFILE='/mnt/scratch/lehieu1/training_files/processed/masked_features_we/train_file.pkl'
+VALFILE='/mnt/scratch/lehieu1/training_files/processed/masked_features_we/val_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/processed/masked_features_we/test_file.pkl'
 
 NB_TRAIN=100000
 NB_VAL=10000
 NB_TEST=10000
 
 # Experiment
-NAME="weight1_500GeV_min_cuts_withenergy"
-EXTRA=', min. E=500GeV'
+DATE= date +'%m%d%y'
+NAME="${DATE}_masked_features"
+EXTRA=''
+MULTI=0
 RUN="$SLURM_ARRAY_TASK_ID"
 
 NB_EPOCH=200
@@ -41,7 +43,7 @@ module load powertools
 source /mnt/home/lehieu1/anaconda3/etc/profile.d/conda.sh
 conda activate /mnt/home/lehieu1/load_conda_env
 
-time python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/main.py $PYARGS
+time python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/original_main.py $PYARGS
 
 # Printing job statistics
 js ${SLURM_JOB_ID}
@@ -51,4 +53,4 @@ js ${SLURM_JOB_ID}
 PLTTITLE="Model w/ training=${NB_TRAIN}, val=${NB_VAL}, batch=${BATCH_SIZE}, layers=${NB_LAYER}, hidden units=${NB_HIDDEN}"
 #Extra title elements
 PLTTITLE="${PLTTITLE}${EXTRA}"
-python /mnt/home/lehieu1/IceCube/code/GNN/plot_train_val_loss.py -i /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/models/${NAME}/${RUN}/training_stats.csv -o /mnt/home/lehieu1/IceCube/plot/GNN/${NAME}_${RUN}.png -t "${PLTTITLE}"
+python /mnt/home/lehieu1/IceCube/code/GNN/plot_train_val_loss.py -i /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/models/${NAME}/${RUN}/training_stats.csv -o /mnt/home/lehieu1/IceCube/plot/GNN/${NAME}_${RUN}.png -m ${MULTI} -t "${PLTTITLE}"

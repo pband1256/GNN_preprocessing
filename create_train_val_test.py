@@ -17,6 +17,12 @@ parser.add_argument("-o", "--output",type=str,default="/mnt/scratch/lehieu1/trai
                     dest="out",help="path to directory of output pickle files")
 args = parser.parse_args()
 
+# Masking non-coordinate features of feature array
+def mask_features(data,feature_ind=(3,4,5)):
+    for i in range(np.shape(data)[0]):
+        data[i][:,feature_ind] = 0
+    return data
+
 # Open pickled .i3 files one by one and concatenate all data into master arrays
 def pickleList(fileList):
     first = True
@@ -46,7 +52,8 @@ def pickleList(fileList):
 
     ####### Setting weights to 1
     w_all = np.ones(np.shape(w_all))
-    ############################
+    ####### Masking features
+    X_all = mask_features(X_all)
 
     return [X_all,y_all,w_all,e_all,f_all,E_all]
 
