@@ -11,8 +11,6 @@ parser.add_argument("-i", "--input",type=str,
                     dest="input", help="path and name of input .csv data")
 parser.add_argument("-o", "--output",type=str,default='/mnt/home/lehieu1/IceCube/plot/GNN/'+datetime.now().strftime("%H%M%S_%m%d%Y"),
                     dest="output",help="path and name of output plot file")
-parser.add_argument('-l','--lrate',type=float,nargs='+', default=[5e-3,5e-4,5e-5,5e-6],
-                    dest="lrate",help='learning rates')
 parser.add_argument('-t','--title',type=str,default='',
                     dest='title',help='plot title')
 parser.add_argument('-m','--multi',type=int,default=1,
@@ -22,7 +20,8 @@ parser.add_argument('-m','--multi',type=int,default=1,
 args = parser.parse_args()
 
 
-def loss_plot(ax,data,loss_type='train',multi=1,lrate=args.lrate):
+def loss_plot(ax,data,loss_type='train',multi=1):
+    lrate = np.sort(np.unique(data['lrate']))[::-1]
     if loss_type == 'train':
         loss_type = 'train_loss'
         ax.set_title("Training loss")
@@ -33,19 +32,18 @@ def loss_plot(ax,data,loss_type='train',multi=1,lrate=args.lrate):
     ax.plot(data['Epoch'],data[loss_type])
     ax.axvline(x=0,linewidth=1, color='r')
     if multi:
-        ax.annotate(s='lrate='+str(lrate[0]),xy=(1,max(data[loss_type])),rotation=90,verticalalignment='top')
+        ax.annotate(s='lrate='+str("{:.0e}".format(lrate[0])),xy=(1,max(data[loss_type])),rotation=90,verticalalignment='top')
     else:
         ax.set_title('')
     for i in range(1,len(lrate)):
         cutoff = (data['lrate']==lrate[i-1])[::-1].idxmax()
-        ax.axvline(x=cutoff+1,linewidth=1, color='r')
         if multi:
-            ax.annotate(s='lrate='+str(lrate[i]),xy=(cutoff+2,max(data[loss_type])),rotation=90,verticalalignment='top')
+            ax.axvline(x=cutoff+1,linewidth=1, color='r')
+            ax.annotate(s='lrate='+str("{:.0e}".format(lrate[i])),xy=(cutoff+2,max(data[loss_type])),rotation=90,verticalalignment='top')
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss")
         
 data = pd.read_csv(args.input)
-
 
 if args.multi==0:
     fig = plt.figure(figsize=(7,5))
