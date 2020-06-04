@@ -7,9 +7,11 @@ nb_dup = 10
 nb_track_casc = nb_data/2
 dup_times = int((nb_track_casc - nb_track_casc % nb_dup)/nb_dup)
 
-with open('/mnt/scratch/lehieu1/training_files/with_energy/052920_000000_training.pkl','rb') as f:
+with open('/mnt/scratch/lehieu1/training_files/processed/equal_labels_nocuts/train_file.pkl','rb') as f:
     X,y,w,e,f,E = pickle.load(f)
 
+print(np.shape(X))
+print(np.mean(y))
 print(E[0:10])
 
 track_ind = np.where(y == 1)[0][:nb_dup]

@@ -50,9 +50,9 @@ def read_args():
   add_arg('--batch_size', help='Size of each minibatch', type=int, default=4)
 
   # Dataset
-  add_arg('--train_file', help='Path to train pickle file',type=str,default=None)
-  add_arg('--val_file', help='Path to val   pickle file',type=str,default=None)
-  add_arg('--test_file', help='Path to test  pickle file',type=str,default=None)
+  add_arg('--train_file', help='List of paths to train pickle file',type=str,nargs='+',default=[None])
+  add_arg('--val_file',   help='Path to val   pickle file',type=str,default=None)
+  add_arg('--test_file',  help='Path to test  pickle file',type=str,default=None)
   add_arg('--nb_train', help='Number of training samples', type=int, default=10)
   add_arg('--nb_val', help='Number of validation samples', type=int, default=10)
   add_arg('--nb_test', help='Number of test samples', type=int, default=10)
@@ -223,7 +223,8 @@ def plot_roc_curve(fprs, tprs, experiment_dir, plot_name, performance):
   '''
   # Plot
   plt.clf()
-  plt.plot(fprs,tprs) #plt.semilogx(fprs, tprs)
+#   plt.semilogx(fprs, tprs)
+  plt.plot(fprs, tprs)
   # Zooms
   plt.xlim([10**-7,1.0])
   plt.ylim([0,1.0])
@@ -278,3 +279,4 @@ def save_test_scores(nb_eval, epoch_loss, tpr, roc, experiment_dir):
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
   with open(pred_file, 'x') as f:
     yaml.dump(test_scores, f, default_flow_style=False)
+

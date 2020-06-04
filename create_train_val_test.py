@@ -36,6 +36,23 @@ def mask_coordinates(data):
         data[i] = np.concatenate([np.concatenate([inactive_DOMs,np.zeros(np.shape(inactive_DOMs))],axis=1),data[i]])
     return data
 
+# Get rid of enough data to get a sample with 50/50 label distribution
+def create_equal_samples(data):
+    data = np.asarray(data)
+    label = data[1]
+    nb_0 = np.sum(label==0)
+    nb_1 = np.sum(label==1)
+    if nb_0 < nb_1:
+        less_ind = np.where(label==0)[0]
+        more_ind = np.where(label==1)[0][0:nb_0]
+    else:
+        less_ind = np.where(label==1)[0]
+        more_ind = np.where(label==0)[0][0:nb_1]
+    data_less = data[:,less_ind]
+    data_more_equal = data[:,more_ind]
+    
+    return np.concatenate((data_less,data_more_equal),axis=1)
+
 # Open pickled .i3 files one by one and concatenate all data into master arrays
 def pickleList(fileList):
     first = True
@@ -63,29 +80,36 @@ def pickleList(fileList):
             print(e)
             continue
 
-    ####### Setting weights to 1
+    ####### Masking weights
     w_all = np.ones(np.shape(w_all))
     ####### Masking features
-    #X_all = mask_features(X_all)
+    # X_all = mask_features(X_all)
     ####### Masking coordinates
-    X_all = mask_coordinates(X_all)
+    # X_all = mask_coordinates(X_all)
+    
+    data = [X_all,y_all,w_all,e_all,f_all,E_all]
 
-    return [X_all,y_all,w_all,e_all,f_all,E_all]
+    ####### Creating 50/50 sample
+    data = create_equal_samples(data)
+
+    return data
 
 # Shuffling ALL files in folder to make sure there's no systematic problem. Probably overkill.
 nb_total = args.nb_train + args.nb_val + args.nb_test
 total_file = glob.glob(args.inp + '/*.pkl')
 random.shuffle(total_file)
 
-train_file = total_file[0:args.nb_train]
-val_file = total_file[args.nb_train:nb_total-args.nb_test]
-test_file = total_file[nb_total-args.nb_test:nb_total]
+if args.nb_train != 0:
+    train_file = total_file[0:args.nb_train]
+    with open(args.out + '/train_file.pkl',"wb") as f:
+        pickle.dump(pickleList(train_file),f)
 
-with open(args.out + '/train_file.pkl',"wb") as f:
-    pickle.dump(pickleList(train_file),f)
+if args.nb_val != 0:
+    val_file = total_file[args.nb_train:nb_total-args.nb_test]
+    with open(args.out + '/val_file.pkl',"wb") as f:
+        pickle.dump(pickleList(val_file),f)
 
-with open(args.out + '/val_file.pkl',"wb") as f:
-    pickle.dump(pickleList(val_file),f)
-
-with open(args.out + '/test_file.pkl',"wb") as f:
-    pickle.dump(pickleList(test_file),f)
+if args.nb_test != 0:
+    test_file = total_file[nb_total-args.nb_test:nb_total]
+    with open(args.out + '/test_file.pkl',"wb") as f:
+        pickle.dump(pickleList(test_file),f)

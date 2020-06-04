@@ -6,23 +6,27 @@
 #SBATCH --time=23:59:00
 #SBATCH --gres gpu:1
 #SBATCH --nodes=1
-#SBATCH --mem=50G
+#SBATCH --mem=100G
 #SBATCH --mail-type=FAIL # notifications for job fail
 #SBATCH --mail-user=lehieu1
 
 #mkdir -p slurm_out
 # Dataset
-TRAINFILE='/mnt/scratch/lehieu1/training_files/processed/weight1_energy/train_file.pkl'
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/weight1_energy/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/weight1_energy/test_file.pkl'
+TRAINFILE='/mnt/scratch/lehieu1/training_files/processed/equal_labels_nocuts/train_file.pkl'
+TRAINFILE1='/mnt/scratch/lehieu1/training_files/processed/weight1_energy_2/train_file.pkl'
+TRAINFILE2='/mnt/scratch/lehieu1/training_files/processed/weight1_energy_3/train_file.pkl'
+TRAINFILE3='/mnt/scratch/lehieu1/training_files/processed/weight1_energy_4/train_file.pkl'
+TRAINFILE4='/mnt/scratch/lehieu1/training_files/processed/weight1_energy_5/train_file.pkl'
+VALFILE='/mnt/scratch/lehieu1/training_files/processed/equal_labels_nocuts/val_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/processed/equal_labels_nocuts/test_file.pkl'
 
-NB_TRAIN=200000
-NB_VAL=20000
-NB_TEST=20000
+NB_TRAIN=100000
+NB_VAL=10000
+NB_TEST=10000
 
 # Experiment
 DATE=$(date +'%m%d%y')
-NAME="${DATE}_increased_sample"
+NAME="${DATE}_5050_labels"
 EXTRA=''
 MULTI=0
 RUN="$SLURM_ARRAY_TASK_ID"
@@ -43,7 +47,7 @@ module load powertools
 source /mnt/home/lehieu1/anaconda3/etc/profile.d/conda.sh
 conda activate /mnt/home/lehieu1/load_conda_env
 
-time python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/original_main.py $PYARGS
+time python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/main.py $PYARGS
 
 # Printing job statistics
 js ${SLURM_JOB_ID}
@@ -54,7 +58,3 @@ PLTTITLE="Model w/ training=${NB_TRAIN}, val=${NB_VAL}, batch=${BATCH_SIZE}, lay
 #Extra title elements
 PLTTITLE="${PLTTITLE}${EXTRA}"
 python /mnt/home/lehieu1/IceCube/code/GNN/plot_train_val_loss.py -i /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/models/${NAME}/${RUN}/training_stats.csv -o /mnt/home/lehieu1/IceCube/plot/GNN/${NAME}_${RUN}.png -m ${MULTI} -t "${PLTTITLE}"
-ad powertools
-source /mnt/home/lehieu1/anaconda3/etc/profile.d/conda.sh
-conda activate /mnt/home/lehieu1/load_conda_env
-

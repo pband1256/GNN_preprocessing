@@ -8,7 +8,7 @@ import torch.nn as nn
 
 from sklearn.metrics import roc_auc_score
 
-import utils
+import multi_utils as utils
 import model
 from data_handler import construct_loader
 
@@ -66,7 +66,7 @@ def train(
           criterion,
           args, 
           experiment_dir, 
-          train_loader, 
+          multi_train_loader, 
           valid_loader
           ):
   optimizer = torch.optim.Adamax(net.parameters(), lr=args.lrate)
@@ -78,6 +78,8 @@ def train(
     logging.info("\nEpoch {}".format(i+1))
     logging.info("Learning rate: {0:.3g}".format(args.lrate))
     
+    train_loader = multi_train_loader[i % len(multi_train_loader)]
+    print('Training on '+args.train_file[i % len(multi_train_loader)])
     train_stats = train_one_epoch(net,
                                   criterion,
                                   optimizer,
@@ -200,16 +202,19 @@ def main():
   if not args.evaluate:
     assert (args.train_file != None)
     assert (args.val_file   != None)
-    train_loader = construct_loader(
-                                args.train_file,
+    multi_train_loader = []
+    for file in args.train_file:
+      train_loader = construct_loader(
+                                file,
                                 args.nb_train,
                                 args.batch_size,
                                 shuffle=True)
+      multi_train_loader.append(train_loader)
     valid_loader = construct_loader(args.val_file,
                                     args.nb_val,
                                     args.batch_size)
     logging.info("Training on {} samples.".format(
-                                          len(train_loader)*args.batch_size))
+                                          len(multi_train_loader)*len(train_loader)*args.batch_size))
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
     train(
@@ -217,7 +222,7 @@ def main():
           criterion,
           args,
           experiment_dir,
-          train_loader,
+          multi_train_loader,
           valid_loader
           )
 
@@ -240,3 +245,4 @@ def main():
 
 if __name__ == "__main__":
   main()
+
