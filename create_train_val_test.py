@@ -50,8 +50,12 @@ def create_equal_samples(data):
         more_ind = np.where(label==0)[0][0:nb_1]
     data_less = data[:,less_ind]
     data_more_equal = data[:,more_ind]
-    
-    return np.concatenate((data_less,data_more_equal),axis=1)
+    data = np.concatenate((data_less,data_more_equal),axis=1)
+
+    # Shuffle along axis=1 or batch axis
+    data = new_data[:, np.random.permutation(data.shape[1])]
+
+    return data
 
 # Open pickled .i3 files one by one and concatenate all data into master arrays
 def pickleList(fileList):
