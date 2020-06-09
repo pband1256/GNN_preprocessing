@@ -48,6 +48,7 @@ def read_args():
   add_arg('--nb_epoch', help='Number of epochs to train', type=int, default=2)
   add_arg('--lrate', help='Initial learning rate', type=float, default = 0.005)
   add_arg('--batch_size', help='Size of each minibatch', type=int, default=4)
+  add_arg('--patience',help='Patience for lrate scheduler', type=int, default=20)
 
   # Dataset
   add_arg('--train_file', help='List of paths to train pickle file',type=str,nargs='+',default=[None])

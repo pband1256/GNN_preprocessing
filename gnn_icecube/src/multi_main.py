@@ -70,7 +70,7 @@ def train(
           valid_loader
           ):
   optimizer = torch.optim.Adamax(net.parameters(), lr=args.lrate)
-  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max')
+  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max',patience=args.patience)
   # Nb epochs completed tracked in case training interrupted
   for i in range(args.nb_epochs_complete, args.nb_epoch):
     # Update learning rate in optimizer
@@ -78,8 +78,9 @@ def train(
     logging.info("\nEpoch {}".format(i+1))
     logging.info("Learning rate: {0:.3g}".format(args.lrate))
     
+    ######### Switching between training sets
     train_loader = multi_train_loader[i % len(multi_train_loader)]
-    print('Training on '+args.train_file[i % len(multi_train_loader)])
+    logging.info("Training on "+args.train_file[i % len(multi_train_loader)])
     train_stats = train_one_epoch(net,
                                   criterion,
                                   optimizer,

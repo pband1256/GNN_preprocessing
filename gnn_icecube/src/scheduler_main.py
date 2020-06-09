@@ -71,7 +71,7 @@ def train(
           ):
   optimizer = torch.optim.Adamax(net.parameters(), lr=args.lrate)
   ############# Modified
-  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=0.2,patience=20)
+  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='max',factor=0.1,patience=200)
   # Nb epochs completed tracked in case training interrupted
   for i in range(args.nb_epochs_complete, args.nb_epoch):
     # Update learning rate in optimizer
