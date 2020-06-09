@@ -278,3 +278,12 @@ def save_test_scores(nb_eval, epoch_loss, tpr, roc, experiment_dir):
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
   with open(pred_file, 'x') as f:
     yaml.dump(test_scores, f, default_flow_style=False)
+
+def save_best_scores(epoch, epoch_loss, tpr, roc, experiment_dir):
+  best_scores = {'epoch':epoch,
+                 'epoch_loss':epoch_loss,
+                 'tpr':float(tpr),
+                 'roc auc':float(roc)}
+  pred_file = os.path.join(experiment_dir, 'best_scores.yml')
+  with open(pred_file, 'x') as f:
+    yaml.dump(best_scores, f, default_flow_style=False)

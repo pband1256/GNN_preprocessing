@@ -11,6 +11,8 @@ parser.add_argument("-v", "--nb_val",type=int,default=10,
                     dest="nb_val",help="number of validation files")
 parser.add_argument("-e", "--nb_test",type=int,default=10,
                     dest="nb_test",help="number of test files")
+parser.add_argument("-n", "--nb_split",type=int,default=1,
+                    dest="nb_split",help="number of files to split into")
 parser.add_argument("-i", "--input",type=str,default="/mnt/scratch/lehieu1/training_files",
                     dest="inp",help="path to directory of input pickle files")
 parser.add_argument("-o", "--output",type=str,default="/mnt/scratch/lehieu1/training_files/processed",
@@ -53,7 +55,7 @@ def create_equal_samples(data):
     data = np.concatenate((data_less,data_more_equal),axis=1)
 
     # Shuffle along axis=1 or batch axis
-    data = new_data[:, np.random.permutation(data.shape[1])]
+    data = data[:, np.random.permutation(data.shape[1])]
 
     return data
 
@@ -104,9 +106,11 @@ total_file = glob.glob(args.inp + '/*.pkl')
 random.shuffle(total_file)
 
 if args.nb_train != 0:
-    train_file = total_file[0:args.nb_train]
-    with open(args.out + '/train_file.pkl',"wb") as f:
-        pickle.dump(pickleList(train_file),f)
+    split_ind = args.nb_train/args.nb_split
+    for i in range(args.nb_split):
+        train_file = total_file[int(i*split_ind):int((i+1)*split_ind)]
+        with open(args.out + '/train_file_'+str(i+1)+'.pkl',"wb") as f:
+            pickle.dump(pickleList(train_file),f)
 
 if args.nb_val != 0:
     val_file = total_file[args.nb_train:nb_total-args.nb_test]
