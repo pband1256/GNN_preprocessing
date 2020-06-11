@@ -13,22 +13,22 @@
 #mkdir -p slurm_out
 
 # Dataset
-TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/test/train_file* )
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/test/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/test/test_file.pkl'
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_multi/train_file* )
+VALFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_multi/val_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_multi/test_file.pkl'
 
-NB_FILE=5
-NB_TRAIN=10000
-NB_VAL=1000
-NB_TEST=1000
+NB_FILE=10
+NB_TRAIN=1000000
+NB_VAL=100000
+NB_TEST=100000
 
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-NAME="${DATE: -6}_test"
+NAME="${DATE: -6}_500gev_mincuts_10x100k_20patience"
 RUN="$SLURM_ARRAY_TASK_ID"
 
-PATIENCE=200
+PATIENCE=20
 NB_EPOCH=200
 LRATE=0.05
 BATCH_SIZE=32
