@@ -3,9 +3,9 @@
 CONDOR_ID=$(Cluster)_$(Process)
 
 # Dataset
-TRAINFILE='/mnt/scratch/lehieu1/training_files/processed/weight1_energy/train_file.pkl'
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/weight1_energy/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/weight1_energy/test_file.pkl'
+TRAINFILE='/data/icecube/hieule/training_files/processed/weight1_energy/train_file.pkl'
+VALFILE='/data/icecube/hieule/training_files/processed/weight1_energy/val_file.pkl'
+TESTFILE='/data/icecube/hieule/training_files/processed/weight1_energy/test_file.pkl'
 
 NB_TRAIN=100000
 NB_VAL=10000
@@ -27,7 +27,7 @@ PYARGS="--name $NAME --run $RUN --train_file $TRAINFILE --val_file $VALFILE --te
 
 echo -e "\nStarting experiment with name $NAME...\n"
 
-source /opt/conda/etc/profile.d/conda.sh
+source /home/users/hieule/anaconda3/etc/profile.d/conda.sh
 source activate GNN_conda
 
-python /home/jovyan/GNN/gnn_icecube/src/main.py $PYARGS
+python /home/users/hieule/code/GNN/gnn_icecube/src/main.py $PYARGS
