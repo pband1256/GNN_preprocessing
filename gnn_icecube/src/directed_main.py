@@ -8,8 +8,8 @@ import torch.nn as nn
 
 from sklearn.metrics import roc_auc_score
 
-import multi_utils as utils
-import model
+import directed_utils as utils
+import directed_model as model
 from data_handler import construct_loader
 
 #####################
@@ -172,6 +172,7 @@ def evaluate(net,
 def main():
   input_dim=6
   spatial_dims=[0,1,2]
+  temporal_dims=3
   args = utils.read_args()
 
   experiment_dir = utils.get_experiment_dir(args.name, args.run)
@@ -194,7 +195,8 @@ def main():
                                     args.nb_hidden, 
                                     args.nb_layer,
                                     input_dim,
-                                    spatial_dims
+                                    spatial_dims,
+                                    temporal_dims
                                     )
   if torch.cuda.is_available():
     net = net.cuda()

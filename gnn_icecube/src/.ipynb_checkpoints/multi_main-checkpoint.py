@@ -172,7 +172,6 @@ def evaluate(net,
 def main():
   input_dim=6
   spatial_dims=[0,1,2]
-  temporal_dims=3
   args = utils.read_args()
 
   experiment_dir = utils.get_experiment_dir(args.name, args.run)
@@ -195,8 +194,7 @@ def main():
                                     args.nb_hidden, 
                                     args.nb_layer,
                                     input_dim,
-                                    spatial_dims,
-                                    temporal_dims
+                                    spatial_dims
                                     )
   if torch.cuda.is_available():
     net = net.cuda()
