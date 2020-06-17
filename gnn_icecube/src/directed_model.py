@@ -12,13 +12,13 @@ class GNN(nn.Module):
     - Runs through several graph convolution layers of specified type
     - Performs final classification using logistic regression
   '''
-  def __init__(self, nb_hidden, nb_layer, input_dim, spatial_dims=None):
+  def __init__(self, nb_hidden, nb_layer, input_dim, spatial_dims=None, temporal_dims=None):
     super(GNN, self).__init__()
     # Initialize GNN layers
     first_layer = GNN_Layer(
                             input_dim, 
                             nb_hidden, 
-                            kernel=GaussianSoftmax(spatial_dims),
+                            kernel=GaussianSoftmax(spatial_dims,temporal_dims),
                             apply_norm=False
                            )
     rem_layers = [GNN_Layer(nb_hidden, nb_hidden) for _ in range(nb_layer-1)]
@@ -100,10 +100,11 @@ class Gaussian(nn.Module):
   Can be initialized to only use a subset of features
   in the kernel (e.g. spatial coordinates).
   '''
-  def __init__(self, spatial_coords=None):
+  def __init__(self, spatial_coords=None, temporal_coords=None):
     super(Gaussian, self).__init__()
     self.sigma = nn.Parameter(torch.rand(1) * 0.02 + 0.99)
     self.spatial_coords = spatial_coords
+    self.temporal_coords = temporal_coords
 
   def _apply_norm_and_mask(self, adj, mask):
     return adj * mask
@@ -115,12 +116,22 @@ class Gaussian(nn.Module):
       emb = emb_in[:,:,self.spatial_coords]
     else:
       emb = emb_in
+    # Calculate temporal direction between nodes
+    if self.time_coords is not None:
+      emb_time = emb_in[:,:,self.temporal_coords]
+      emb_time = emb_time.unsqueeze(2).expand(batch, nb_pts, nb_pts)
+      emb_time_t = emb_time.transpose(1,2)
+      dt = emb_time - emb_time.transpose(1,2)
+    else:
+      dt = torch.ones(batch, nb_pts, nb_pts)
     # Expand and transpose coordinates
     emb = emb.unsqueeze(2).expand(batch, nb_pts, nb_pts, emb.size()[2])
     emb_t = emb.transpose(1,2)
     # Apply gaussian kernel to adj
     adj = ((emb-emb_t)**2).mean(3)
     adj = torch.exp(-adj.div(self.sigma**2))
+    # Apply temporal direction to adj
+    adj = adj * dt
     # Normalize over norm (to be used in child classes for e.g. Softmax)
     adj = self._apply_norm_and_mask(adj, mask)
     return adj
@@ -130,8 +141,8 @@ class GaussianSoftmax(Gaussian):
   Exactly identical to the Gaussian kernel, but
   adj matrix is renormalized using Softmax.
   '''
-  def __init__(self, spatial_coords=None):
-    super(GaussianSoftmax, self).__init__(spatial_coords)
+  def __init__(self, spatial_coords=None, temporal_coords=None):
+    super(GaussianSoftmax, self).__init__(spatial_coords, temporal_coords)
 
   def _apply_norm_and_mask(self, adj, mask):
     # Softmax applies mask so no need to repeat

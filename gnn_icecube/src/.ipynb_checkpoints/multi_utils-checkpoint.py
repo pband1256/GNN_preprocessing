@@ -114,7 +114,8 @@ def create_or_restore_model(
                             nb_hidden,
                             nb_layer,
                             input_dim,
-                            spat_dims
+                            spat_dims,
+                            temp_dims
                             ):
   '''
   Checks if model exists and creates it if not.
@@ -127,7 +128,7 @@ def create_or_restore_model(
     logging.warning("Model restored.")
   else:
     logging.warning("Creating new model:")
-    m = model.GNN(nb_hidden, nb_layer, input_dim, spat_dims)
+    m = model.GNN(nb_hidden, nb_layer, input_dim, spat_dims, temp_dims)
     logging.info(m)
     save_model(m, model_file)
     logging.warning("Initial model saved.")
