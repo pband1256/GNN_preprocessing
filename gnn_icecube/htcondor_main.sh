@@ -28,6 +28,6 @@ PYARGS="--name $NAME --run $RUN --train_file $TRAINFILE --val_file $VALFILE --te
 echo -e "\nStarting experiment with name $NAME...\n"
 
 source /home/users/hieule/anaconda3/etc/profile.d/conda.sh
-source activate GNN_conda
+conda activate GNN_conda
 
 python /home/users/hieule/code/GNN/gnn_icecube/src/main.py $PYARGS
