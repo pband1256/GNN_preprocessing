@@ -1,32 +1,19 @@
+# some_file.py
+import sys
+# sys.path.insert(1, '/home/users/hieule/code/GNN/gnn_icecube/src')
+sys.path.insert(1, '/home/joyvan/GNN/gnn_icecube/src')
+import model
+
 import pickle
 import numpy as np
 from sklearn.utils import shuffle
 
-nb_data = 150000
-nb_dup = 10
-nb_track_casc = nb_data/2
-dup_times = int((nb_track_casc - nb_track_casc % nb_dup)/nb_dup)
-
-with open('/mnt/scratch/lehieu1/training_files/processed/equal_labels_nocuts/train_file.pkl','rb') as f:
+# with open('/mnt/scratch/lehieu1/training_files/processed/equal_labels_nocuts/train_file.pkl','rb') as f:
+# with open('/data/icecube/hieule/training_files/processed/nocuts_multi/train_file_10.pkl','rb') as f:
+with open('/home/jovyan/val_file.pkl','rb') as f:
     X,y,w,e,f,E = pickle.load(f)
 
-print(np.shape(X))
-print(np.mean(y))
-print(E[0:10])
-
-track_ind = np.where(y == 1)[0][:nb_dup]
-casc_ind = np.where(y == 0)[0][:nb_dup]
-
-def duplicate(array, track_ind, casc_ind, dup_times):
-    return array[track_ind].tolist()*dup_times + array[casc_ind].tolist()*dup_times
-
-X_data = duplicate(X, track_ind, casc_ind, dup_times)
-y_data = duplicate(y, track_ind, casc_ind, dup_times)
-w_data = duplicate(w, track_ind, casc_ind, dup_times)
-e_data = duplicate(e, track_ind, casc_ind, dup_times)
-f_data = duplicate(f, track_ind, casc_ind, dup_times)
-
-w_data = np.ones(np.shape(w_data)).tolist()
+w = np.ones(np.shape(w)).tolist()
 
 X_data,y_data,w_data,e_data,f_data = shuffle(X_data,y_data,w_data,e_data,f_data)
 

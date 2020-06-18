@@ -113,8 +113,10 @@ def train(
 
     utils.save_epoch_model(experiment_dir, net)
     utils.save_args(experiment_dir, args)
+    t3 = time.time()
     logging.info("Saving files took {} seconds.".format(int(time.time()-t2)))
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
+    logging.info("Logging 2 lines took {} seconds.".format(int(time.time()-t3)))
     
     if args.lrate < 10**-6:
         logging.warning("Minimum learning rate reached.")
