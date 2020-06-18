@@ -117,7 +117,7 @@ class Gaussian(nn.Module):
     else:
       emb = emb_in
     # Calculate temporal direction between nodes
-    if self.time_coords is not None:
+    if self.temporal_coords is not None:
       emb_time = emb_in[:,:,self.temporal_coords]
       emb_time = emb_time.unsqueeze(2).expand(batch, nb_pts, nb_pts)
       emb_time_t = emb_time.transpose(1,2)
