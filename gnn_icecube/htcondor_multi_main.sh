@@ -12,7 +12,7 @@ NB_TEST=100000
 
 # Experiment
 DATE=$(date +'%m%d%y')
-NAME="${DATE}_more_benchmarking"
+NAME="${DATE}_even_more_benchmarking"
 RUN=$1
 
 PATIENCE=20
@@ -33,9 +33,10 @@ TRAINFILE_SLICED=${TRAINFILE[@]:0:${NB_FILE}}
 # Entering arguments
 PYARGS="--name $NAME --run $RUN --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN"
 
-echo "$CUDA_VISIBLE_DEVICES"
+#echo "CUDA_VISIBLE_DEVICES $CUDA_VISIBLE_DEVICES"
 echo -e "\nStarting experiment with name $NAME...\n"
 
 source /home/users/hieule/anaconda3/etc/profile.d/conda.sh
 conda activate GNN_conda
+#nvidia-smi 
 python /home/users/hieule/code/GNN/gnn_icecube/src/multi_main.py $PYARGS
