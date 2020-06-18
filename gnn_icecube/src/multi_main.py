@@ -81,6 +81,9 @@ def train(
     ######### Switching between training sets
     train_loader = multi_train_loader[i % len(multi_train_loader)]
     logging.info("Training on "+args.train_file[i % len(multi_train_loader)])
+    logging.info("Loading file took {} seconds.".format(int(time.time()-t0)))
+    t1 = time.time()
+
     train_stats = train_one_epoch(net,
                                   criterion,
                                   optimizer,
@@ -89,6 +92,9 @@ def train(
                                   train_loader)
     val_stats = evaluate(net, criterion, experiment_dir, args,
                             valid_loader, 'Valid')
+
+    logging.info("Training 1 epoch took {} seconds.".format(int(time.time()-t1)))
+    t2 = time.time()
                                 
     utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
 
@@ -107,10 +113,11 @@ def train(
 
     utils.save_epoch_model(experiment_dir, net)
     utils.save_args(experiment_dir, args)
+    logging.info("Saving files took {} seconds.".format(int(time.time()-t2)))
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
     if args.lrate < 10**-6:
-        logging.warning("Minimum learning rate reched.")
+        logging.warning("Minimum learning rate reached.")
         break
 
   logging.warning("Training completed.")

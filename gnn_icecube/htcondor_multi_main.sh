@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Dataset
-TRAINFILE=( /data/icecube/hieule/training_files/processed/500GeV_min_cuts_multi/train_file* )
-VALFILE='/data/icecube/hieule/training_files/processed/500GeV_min_cuts_multi/val_file.pkl'
-TESTFILE='/data/icecube/hieule/training_files/processed/500GeV_min_cuts_multi/test_file.pkl'
+TRAINFILE=( /data/icecube/hieule/training_files/processed/nocuts_multi/train_file* )
+VALFILE='/data/icecube/hieule/training_files/processed/nocuts_multi/val_file.pkl'
+TESTFILE='/data/icecube/hieule/training_files/processed/nocuts_multi/test_file.pkl'
 
 NB_FILE=10
 NB_TRAIN=1000000
@@ -12,7 +12,7 @@ NB_TEST=100000
 
 # Experiment
 DATE=$(date +'%m%d%y')
-NAME="${DATE}_500gev_mincuts_10x100k_20patience"
+NAME="${DATE}_time_benchmarking"
 RUN=$1
 
 PATIENCE=20

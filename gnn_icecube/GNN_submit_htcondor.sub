@@ -5,7 +5,7 @@ error = /home/users/hieule/job_logs/error/GNN_$(Cluster)_$(Process).error
 executable = /home/users/hieule/code/GNN/gnn_icecube/htcondor_multi_main.sh
 arguments = $(Step)
 request_GPUs = 1
-request_memory = 15GB
+request_memory = 20GB
 
 Universe  = vanilla
 +NATIVE_OS = true
@@ -13,5 +13,4 @@ requirements = (OpSysMajorVer =?= 7)
 notification = Error
 notify_user = lehieu1@msu.edu
 
-queue 3
-
+queue
