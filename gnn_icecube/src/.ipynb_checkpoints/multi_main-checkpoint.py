@@ -41,10 +41,12 @@ def train_one_epoch(net,
     loss = criterion(out, y, w)
     loss.backward()
     optimizer.step()
-    logging.info("Training 1 batch took {} seconds.".format(int(time.time()-t0)))
 
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
+    #####################################################################################
+    t1 = time.time()
+    #####################################################################################
     pred_y[beg:end]  = out.data.cpu().numpy()
     true_y[beg:end]  = y.data.cpu().numpy()
     weights[beg:end] = w.data.cpu().numpy()
@@ -54,6 +56,14 @@ def train_one_epoch(net,
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
+    #####################################################################################    
+      logging.info("Training {} samples took {} seconds.".format(i, time.time()-t0))
+      logging.info("Transferring pred/true_y and w to CPU took {}.".format(time.time()-t1))
+    if i==0 and X.is_cuda:
+      logging.info("Data is on GPU")
+    elif not X.is_cuda:
+      logging.info("Data is on CPU")
+    #####################################################################################
 
   t0 = time.time()
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
@@ -182,9 +192,6 @@ def evaluate(net,
 
 
 def main():
-  t0 = time.time()
-  t1 = time.time()
-  logging.info("time.time() took {}".format(time.time()-t0))
   input_dim=6
   spatial_dims=[0,1,2]
   args = utils.read_args()
@@ -193,6 +200,10 @@ def main():
   utils.initialize_experiment_if_needed(experiment_dir, args.evaluate)
   # Logger will print to stdout and logfile
   utils.initialize_logger(experiment_dir)
+
+  t0 = time.time()
+  t1 = time.time()
+  logging.info("time.time() took {}".format(time.time()-t0))
 
   # Optionally restore arguments from previous training
   # Useful if training is interrupted
