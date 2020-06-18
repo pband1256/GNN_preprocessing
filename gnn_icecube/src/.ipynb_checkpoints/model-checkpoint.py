@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import time
 
 ###########################
 #     CORE MODEL CODE     #
@@ -35,8 +36,16 @@ class GNN(nn.Module):
     if emb.is_cuda:
       adj = adj.cuda()
     # Run through layers
+    ################################################
+    t0 = time.time()
+    ################################################
     for i, layer in enumerate(self.layers):
       emb, adj = layer(emb, adj, mask, batch_nb_nodes)
+      ################################################
+      if i==0:
+        logging.info('Going through 1 layer took {}. If this is quick, data loading is the issue.'.format(time.time()-t0))
+      ################################################
+    logging.info('Going through all layers took {}'.format(time.time()-t0))
     # Apply final readout and return
     emb = mask_embedding(emb, mask).sum(1)
     emb = self.readout_norm(emb.unsqueeze(1)).squeeze(1)

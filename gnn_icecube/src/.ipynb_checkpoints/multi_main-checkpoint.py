@@ -44,9 +44,6 @@ def train_one_epoch(net,
 
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
-    #####################################################################################
-    t1 = time.time()
-    #####################################################################################
     pred_y[beg:end]  = out.data.cpu().numpy()
     true_y[beg:end]  = y.data.cpu().numpy()
     weights[beg:end] = w.data.cpu().numpy()
@@ -58,17 +55,14 @@ def train_one_epoch(net,
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
     #####################################################################################    
       logging.info("Training {} samples took {} seconds.".format(i, time.time()-t0))
-      logging.info("Transferring pred/true_y and w to CPU took {}.".format(time.time()-t1))
     if i==0 and X.is_cuda:
       logging.info("Data is on GPU")
     elif not X.is_cuda:
       logging.info("Data is on CPU")
     #####################################################################################
 
-  t0 = time.time()
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
-  logging.info("Plotting ROC curve took {} seconds.".format(int(time.time()-t0)))
 
   epoch_loss /= nb_train
   logging.info("Train: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e}".format(
@@ -96,8 +90,6 @@ def train(
     ######### Switching between training sets
     train_loader = multi_train_loader[i % len(multi_train_loader)]
     logging.info("Training on "+args.train_file[i % len(multi_train_loader)])
-    logging.info("Loading file took {} seconds.".format(int(time.time()-t0)))
-    t1 = time.time()
 
     train_stats = train_one_epoch(net,
                                   criterion,
@@ -107,9 +99,6 @@ def train(
                                   train_loader)
     val_stats = evaluate(net, criterion, experiment_dir, args,
                             valid_loader, 'Valid')
-
-    logging.info("Training 1 epoch took {} seconds.".format(int(time.time()-t1)))
-    t2 = time.time()
                                 
     utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
 
@@ -128,7 +117,6 @@ def train(
 
     utils.save_epoch_model(experiment_dir, net)
     utils.save_args(experiment_dir, args)
-    logging.info("Saving files took {} seconds.".format(int(time.time()-t2)))
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
     if args.lrate < 10**-6:
