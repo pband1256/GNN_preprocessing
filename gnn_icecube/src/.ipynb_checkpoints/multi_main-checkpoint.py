@@ -36,10 +36,12 @@ def train_one_epoch(net,
   for i, batch in enumerate(train_loader):
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
     optimizer.zero_grad()
+    t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
     loss = criterion(out, y, w)
     loss.backward()
     optimizer.step()
+    logging.info("Training 1 batch took {} seconds.".format(int(time.time()-t0)))
 
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
@@ -53,8 +55,11 @@ def train_one_epoch(net,
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
 
+  t0 = time.time()
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
+  logging.info("Plotting ROC curve took {} seconds.".format(int(time.time()-t0)))
+
   epoch_loss /= nb_train
   logging.info("Train: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e}".format(
                                                       epoch_loss, roc, tpr))
@@ -81,6 +86,9 @@ def train(
     ######### Switching between training sets
     train_loader = multi_train_loader[i % len(multi_train_loader)]
     logging.info("Training on "+args.train_file[i % len(multi_train_loader)])
+    logging.info("Loading file took {} seconds.".format(int(time.time()-t0)))
+    t1 = time.time()
+
     train_stats = train_one_epoch(net,
                                   criterion,
                                   optimizer,
@@ -89,6 +97,9 @@ def train(
                                   train_loader)
     val_stats = evaluate(net, criterion, experiment_dir, args,
                             valid_loader, 'Valid')
+
+    logging.info("Training 1 epoch took {} seconds.".format(int(time.time()-t1)))
+    t2 = time.time()
                                 
     utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
 
@@ -107,10 +118,11 @@ def train(
 
     utils.save_epoch_model(experiment_dir, net)
     utils.save_args(experiment_dir, args)
+    logging.info("Saving files took {} seconds.".format(int(time.time()-t2)))
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
     if args.lrate < 10**-6:
-        logging.warning("Minimum learning rate reched.")
+        logging.warning("Minimum learning rate reached.")
         break
 
   logging.warning("Training completed.")
@@ -170,6 +182,9 @@ def evaluate(net,
 
 
 def main():
+  t0 = time.time()
+  t1 = time.time()
+  logging.info("time.time() took {}".format(time.time()-t0))
   input_dim=6
   spatial_dims=[0,1,2]
   args = utils.read_args()
@@ -200,6 +215,7 @@ def main():
     net = net.cuda()
     logging.warning("Training on GPU")
     logging.info("GPU type:\n{}".format(torch.cuda.get_device_name(0)))
+    logging.info("Number of GPU: {}".format(torch.cuda.device_count()))
   criterion = nn.functional.binary_cross_entropy
   if not args.evaluate:
     assert (args.train_file != None)
