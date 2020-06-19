@@ -11,6 +11,9 @@ from sklearn.metrics import roc_auc_score
 import multi_utils as utils
 import model
 from data_handler import construct_loader
+########################
+import wandb
+########################
 
 #####################
 #     CONSTANTS     #
@@ -34,14 +37,26 @@ def train_one_epoch(net,
   true_y = np.zeros((nb_train))
   weights = np.zeros((nb_train))
   for i, batch in enumerate(train_loader):
+    #########################
+    t1 = time.time()
+    #########################
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
+    #########################
+    t2 = time.time()
+    #########################
     optimizer.zero_grad()
     t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
+    #########################
+    t3 = time.time()
+    #########################
     loss = criterion(out, y, w)
     loss.backward()
     optimizer.step()
-
+    #################################
+    t4 = time.time()
+    logging.info("Time elapsed: {}".format(time.time()-time_init))
+    #################################
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
     pred_y[beg:end]  = out.data.cpu().numpy()
@@ -54,11 +69,9 @@ def train_one_epoch(net,
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
     #####################################################################################    
-      logging.info("Training {} samples took {} seconds.".format(i, time.time()-t0))
-    if i==0 and X.is_cuda:
-      logging.info("Data is on GPU")
-    elif not X.is_cuda:
-      logging.info("Data is on CPU")
+      logging.info("Loading batch took {} seconds".format(t2-t1))  
+      logging.info("Calculating loss and optimizing took {} seconds".format(t4-t3))
+      logging.info("Training 1 batch took {} seconds.".format(t3-t0))
     #####################################################################################
 
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
@@ -180,6 +193,10 @@ def evaluate(net,
 
 
 def main():
+  #################################
+  wandb.init()
+  time_init = time.time()
+  #################################
   input_dim=6
   spatial_dims=[0,1,2]
   args = utils.read_args()
@@ -188,10 +205,6 @@ def main():
   utils.initialize_experiment_if_needed(experiment_dir, args.evaluate)
   # Logger will print to stdout and logfile
   utils.initialize_logger(experiment_dir)
-
-  t0 = time.time()
-  t1 = time.time()
-  logging.info("time.time() took {}".format(time.time()-t0))
 
   # Optionally restore arguments from previous training
   # Useful if training is interrupted
