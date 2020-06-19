@@ -195,6 +195,7 @@ def evaluate(net,
 def main():
   #################################
   wandb.init()
+  global time_init
   time_init = time.time()
   #################################
   input_dim=6
