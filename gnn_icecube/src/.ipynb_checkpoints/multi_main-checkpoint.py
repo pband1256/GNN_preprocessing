@@ -38,6 +38,8 @@ def train_one_epoch(net,
   weights = np.zeros((nb_train))
   for i, batch in enumerate(train_loader):
     #########################
+    if (((i+1) % (len(train_loader)//10)) == 0): 
+      logging.info("Time elapsed: {}".format(time.time()-time_init))  
     t1 = time.time()
     #########################
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
@@ -55,7 +57,6 @@ def train_one_epoch(net,
     optimizer.step()
     #################################
     t4 = time.time()
-    logging.info("Time elapsed: {}".format(time.time()-time_init))
     #################################
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
@@ -68,11 +69,16 @@ def train_one_epoch(net,
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
-    #####################################################################################    
-      logging.info("Loading batch took {} seconds".format(t2-t1))  
+  #####################################################################################  
+      logging.info("Time elapsed: {}".format(time.time()-time_init))  
+      logging.info("Loading batch took {} seconds".format(t2-t1))
+      logging.info("Training 1 batch took {} seconds.".format(t3-t0))  
       logging.info("Calculating loss and optimizing took {} seconds".format(t4-t3))
-      logging.info("Training 1 batch took {} seconds.".format(t3-t0))
-    #####################################################################################
+      logging.info("Transfering tensors to CPI took {} seconds".format(time.time()-t4))
+      logging.info("Total time taken per batch is {} seconds".format(time.time()-t1)) 
+      logging.info("Time elapsed (after batch): {}".format(time.time()-time_init))  
+  logging.info("Total number of batches: {}".format(i))
+  #####################################################################################
 
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
