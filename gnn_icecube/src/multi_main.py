@@ -38,8 +38,6 @@ def train_one_epoch(net,
   weights = np.zeros((nb_train))
   for i, batch in enumerate(train_loader):
     #########################
-    if (((i+1) % (len(train_loader)//10)) == 0): 
-      logging.info("Time elapsed: {}".format(time.time()-time_init))  
     t1 = time.time()
     #########################
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
@@ -58,25 +56,29 @@ def train_one_epoch(net,
     #################################
     t4 = time.time()
     #################################
+#with torch.autograd.profiler.record_function("label-z"):
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
     pred_y[beg:end]  = out.data.cpu().numpy()
     true_y[beg:end]  = y.data.cpu().numpy()
     weights[beg:end] = w.data.cpu().numpy()
-
     epoch_loss += loss.item() 
     # Print running loss about 10 times during each epoch
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
-  #####################################################################################  
-      logging.info("Time elapsed: {}".format(time.time()-time_init))  
-      logging.info("Loading batch took {} seconds".format(t2-t1))
+  #####################################################################################
+      if out.is_cuda and y.is_cuda and w.is_cuda:
+        logging.info("out, y, w are on GPU")
+      else:
+        logging.info("One of out, y, w is not on GPU. This might be the issue.")
+      if X.is_cuda and adj_mask.is_cuda and batch_nb_nodes.is_cuda:
+        logging.info("X, adj_mask, batch_nb_nodes are on GPU")
+      else:
+        logging.info("One of X, adj_mask, batch_nb_nodes is not on GPU. This might be the issue.")
       logging.info("Training 1 batch took {} seconds.".format(t3-t0))  
       logging.info("Calculating loss and optimizing took {} seconds".format(t4-t3))
-      logging.info("Transfering tensors to CPI took {} seconds".format(time.time()-t4))
-      logging.info("Total time taken per batch is {} seconds".format(time.time()-t1)) 
-      logging.info("Time elapsed (after batch): {}".format(time.time()-time_init))  
+      logging.info("Total time taken per batch: {} seconds".format(time.time()-t1)) 
   logging.info("Total number of batches: {}".format(i))
   #####################################################################################
 
@@ -201,8 +203,6 @@ def evaluate(net,
 def main():
   #################################
   wandb.init()
-  global time_init
-  time_init = time.time()
   #################################
   input_dim=6
   spatial_dims=[0,1,2]
@@ -254,14 +254,16 @@ def main():
                                           len(multi_train_loader)*len(train_loader)*args.batch_size))
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
-    train(
-          net,
-          criterion,
-          args,
-          experiment_dir,
-          multi_train_loader,
-          valid_loader
-          )
+    ####################################
+    with torch.autograd.profiler.profile(use_cuda=True, record_shapes=True) as prof:
+        train(
+              net,
+              criterion,
+              args,
+              experiment_dir,
+              multi_train_loader,
+              valid_loader
+              )
 
   # Perform evaluation over test set
   try:
@@ -279,6 +281,9 @@ def main():
                         args,
                         test_loader,
                         TEST_NAME)
+
+  #####################################
+  print(prof.key_averages().table(sort_by="self_cpu_time_total"))
 
 if __name__ == "__main__":
   main()
