@@ -19,11 +19,12 @@ class GNN(nn.Module):
     first_layer = GNN_Layer(
                             input_dim, 
                             nb_hidden, 
-                            kernel=GaussianSoftmax(spatial_dims),
+                            kernel=GaussianSoftmax(spatial_dims).cuda(),
                             apply_norm=False
                            )
     rem_layers = [GNN_Layer(nb_hidden, nb_hidden) for _ in range(nb_layer-1)]
     self.layers = nn.ModuleList([first_layer]+rem_layers)
+    self.layers.cuda()
     # Initialize final readout layer
     self.readout_fc = nn.Linear(nb_hidden, 1)
     self.readout_norm = nn.InstanceNorm1d(1)
@@ -50,9 +51,9 @@ class GNN_Layer(nn.Module):
     self.kernel=kernel
     self.apply_norm=apply_norm
     # Create two graph convolution modules in case residual
-    self.convA = Graph_Convolution(input_dim, nb_hidden // 2)
-    self.convB = Graph_Convolution(input_dim, nb_hidden // 2)
-    self.act = nn.ReLU()
+    self.convA = Graph_Convolution(input_dim, nb_hidden // 2).cuda()
+    self.convB = Graph_Convolution(input_dim, nb_hidden // 2).cuda()
+    self.act = nn.ReLU().cuda()
     self.residual = residual
 
   def forward(self, emb, adj, mask, batch_nb_nodes):
@@ -173,7 +174,7 @@ def softmax_with_padding(adj, mask):
   Accounts for point cloud size of samples by
   renormalizing using the mask.
   '''
-  S = nn.functional.softmax(adj, dim=2)
+  S = nn.functional.softmax(adj, dim=2).cuda()
   S = S * mask
   E = S.sum(2,keepdim=True) + 10**-20
   return S / E

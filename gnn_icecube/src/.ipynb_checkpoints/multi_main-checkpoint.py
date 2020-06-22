@@ -41,7 +41,7 @@ def train_one_epoch(net,
     optimizer.zero_grad()
     t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
-    loss = criterion(out, y, w)
+    loss = criterion(out, y, w).cuda()
     loss.backward()
     optimizer.step()
     beg =     i * args.batch_size
@@ -142,7 +142,7 @@ def evaluate(net,
         for i, batch in enumerate(valid_loader):
             X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names = batch
             out = net(X, adj_mask, batch_nb_nodes)
-            loss = criterion(out, y, w)
+            loss = criterion(out, y, w).cuda()
             epoch_loss += loss.item() 
             # Track predictions, truth, weights over batches
             beg =     i * args.batch_size
