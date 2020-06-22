@@ -32,9 +32,7 @@ class GNN(nn.Module):
   def forward(self, emb, mask, batch_nb_nodes):
     batch_size, nb_pts, input_dim  = emb.size()
     # Create dummy first adjacency matrix
-    adj = Variable(torch.ones(batch_size, nb_pts, nb_pts))
-    if emb.is_cuda:
-      adj = adj.cuda()
+    adj = Variable(torch.ones(batch_size, nb_pts, nb_pts),device=torch.device('cuda'))
     # Run through layers
     for i, layer in enumerate(self.layers):
       emb, adj = layer(emb, adj, mask, batch_nb_nodes)

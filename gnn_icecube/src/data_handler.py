@@ -21,17 +21,12 @@ def collate_icecube(samples):
     evt_names = [s[4] for s in samples]
 
     X, adj_mask, batch_nb_nodes = pad_batch(X)
-
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    else:
-        device = torch.device('cpu')
     
-    X = torch.FloatTensor(X).to(device)
-    y = torch.FloatTensor(y).to(device)
-    w = torch.FloatTensor(w).to(device)
-    adj_mask = torch.FloatTensor(adj_mask).to(device)
-    batch_nb_nodes = torch.FloatTensor(batch_nb_nodes).to(device)
+    X = torch.cuda.FloatTensor(X)
+    y = torch.cuda.FloatTensor(y)
+    w = torch.cuda.FloatTensor(w)
+    adj_mask = torch.cuda.FloatTensor(adj_mask)
+    batch_nb_nodes = torch.cuda.FloatTensor(batch_nb_nodes)
     return X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names
 
 def pad_batch(X):

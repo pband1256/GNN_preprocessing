@@ -37,26 +37,13 @@ def train_one_epoch(net,
   true_y = np.zeros((nb_train))
   weights = np.zeros((nb_train))
   for i, batch in enumerate(train_loader):
-    #########################
-    t1 = time.time()
-    #########################
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
-    #########################
-    t2 = time.time()
-    #########################
     optimizer.zero_grad()
     t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
-    #########################
-    t3 = time.time()
-    #########################
     loss = criterion(out, y, w)
     loss.backward()
     optimizer.step()
-    #################################
-    t4 = time.time()
-    #################################
-#with torch.autograd.profiler.record_function("label-z"):
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
     pred_y[beg:end]  = out.data.cpu().numpy()
@@ -67,20 +54,6 @@ def train_one_epoch(net,
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
-  #####################################################################################
-      if out.is_cuda and y.is_cuda and w.is_cuda:
-        logging.info("out, y, w are on GPU")
-      else:
-        logging.info("One of out, y, w is not on GPU. This might be the issue.")
-      if X.is_cuda and adj_mask.is_cuda and batch_nb_nodes.is_cuda:
-        logging.info("X, adj_mask, batch_nb_nodes are on GPU")
-      else:
-        logging.info("One of X, adj_mask, batch_nb_nodes is not on GPU. This might be the issue.")
-      logging.info("Training 1 batch took {} seconds.".format(t3-t0))  
-      logging.info("Calculating loss and optimizing took {} seconds".format(t4-t3))
-      logging.info("Total time taken per batch: {} seconds".format(time.time()-t1)) 
-  logging.info("Total number of batches: {}".format(i))
-  #####################################################################################
 
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
@@ -230,11 +203,16 @@ def main():
                                     input_dim,
                                     spatial_dims
                                     )
-  if torch.cuda.is_available():
-    net = net.cuda()
-    logging.warning("Training on GPU")
-    logging.info("GPU type:\n{}".format(torch.cuda.get_device_name(0)))
-    logging.info("Number of GPU: {}".format(torch.cuda.device_count()))
+  if not torch.cuda.is_available():
+    raise Exception('No GPU available.')
+    
+  net = net.cuda()
+  logging.warning("Training on GPU")
+  logging.info("GPU type:\n{}".format(torch.cuda.get_device_name(0)))
+  logging.info("Number of GPU: {}".format(torch.cuda.device_count()))
+  # Setting default tensor type to cuda
+  torch.set_default_tensor_type(torch.cuda.FloatTensor)
+
   criterion = nn.functional.binary_cross_entropy
   if not args.evaluate:
     assert (args.train_file != None)
@@ -255,7 +233,7 @@ def main():
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
     ####################################
-    with torch.autograd.profiler.profile(use_cuda=True, record_shapes=True) as prof:
+    with torch.autograd.profiler.profile() as prof:
         train(
               net,
               criterion,
