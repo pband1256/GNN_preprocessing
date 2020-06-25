@@ -1,0 +1,179 @@
+Creating new model:
+GNN(
+  (layers): ModuleList(
+    (0): GNN_Layer(
+      (kernel): GaussianSoftmax()
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=12, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=12, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (1): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (2): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (3): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (4): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (5): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (6): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (7): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (8): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+    (9): GNN_Layer(
+      (convA): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (convB): Graph_Convolution(
+        (fc): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (act): ReLU()
+    )
+  )
+  (readout_fc): Linear(in_features=64, out_features=1, bias=True)
+  (readout_norm): InstanceNorm1d(1, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+  (readout_act): Sigmoid()
+)
+Initial model saved.
+Training on GPU
+GPU type:
+Tesla V100-SXM2-32GB
+Number of GPU: 1
+Training on 999680 samples.
+Validate on 99968 samples.
+
+Epoch 1
+Learning rate: 0.05
+Training on /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_1.pkl
+   9984: 0.006431800
+  19968: 0.006397427
+  29952: 0.006328994
+  39936: 0.006308518
+  49920: 0.006324246
+  59904: 0.006323334
+  69888: 0.006319120
+  79872: 0.006322943
+  89856: 0.006315633
+  99840: 0.006304953
+Train: loss 6.305E-03 -- AUC 5.330E-01 -- TPR 0.000e+00
+Evaluating 99968 Valid samples.
+  49984: 0.006116516
+  99968: 0.006176542
+Valid: loss 6.177E-03 -- AUC 5.975E-01 -- TPR 4.363e-03
+Best performance on valid set.
+Best model saved.
+Epoch took 78 seconds.
+
+Epoch 2
+Learning rate: 0.05
+Training on /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_10.pkl
+   9984: 0.006328664
+  19968: 0.006305235
+  29952: 0.006259595
+  39936: 0.006203982
+  49920: 0.006243780
+  59904: 0.006250206
+  69888: 0.006242689
+  79872: 0.006232963
+  89856: 0.006215768
+  99840: 0.006224964
+Train: loss 6.224E-03 -- AUC 5.669E-01 -- TPR 1.277e-04
+Evaluating 99968 Valid samples.
+  49984: 0.006074849
+  99968: 0.006137945
+Valid: loss 6.138E-03 -- AUC 6.088E-01 -- TPR 4.804e-03
+Best performance on valid set.
+Best model saved.
+Epoch took 75 seconds.
+
+Epoch 3
+Learning rate: 0.05
+Training on /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_2.pkl
+   9984: 0.006034226
+  19968: 0.006098225
+  29952: 0.006136997
+  39936: 0.006149527
+  49920: 0.006157436
+  59904: 0.006152789
+  69888: 0.006163221
+  79872: 0.006175429
+  89856: 0.006189069
+  99840: 0.006172507
+Train: loss 6.175E-03 -- AUC 5.820E-01 -- TPR 4.059e-04
+Evaluating 99968 Valid samples.
+  49984: 0.006055110
+  99968: 0.006117077
+Valid: loss 6.117E-03 -- AUC 6.173E-01 -- TPR 1.028e-02
+Best performance on valid set.
+Best model saved.
+Epoch took 75 seconds.
+Training completed.
+
+Best model loaded for evaluation on test set.
+Evaluating 99968 Test samples.
+  49984: 0.006190222
+  99968: 0.006165829
+Test: loss 6.166E-03 -- AUC 6.191E-01 -- TPR 7.769e-03

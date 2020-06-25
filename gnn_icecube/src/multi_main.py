@@ -38,6 +38,7 @@ def train_one_epoch(net,
   weights = np.zeros((nb_train))
   for i, batch in enumerate(train_loader):
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
+    X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
     optimizer.zero_grad()
     t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
@@ -49,11 +50,12 @@ def train_one_epoch(net,
     pred_y[beg:end]  = out.data.cpu().numpy()
     true_y[beg:end]  = y.data.cpu().numpy()
     weights[beg:end] = w.data.cpu().numpy()
-    epoch_loss += loss.item() 
+    epoch_loss += loss.item()
     # Print running loss about 10 times during each epoch
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
+      #print("Summary: ", torch.cuda.memory_summary())
 
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
@@ -141,6 +143,7 @@ def evaluate(net,
     with torch.autograd.no_grad():
         for i, batch in enumerate(valid_loader):
             X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names = batch
+            X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
             out = net(X, adj_mask, batch_nb_nodes)
             loss = criterion(out, y, w).cuda()
             epoch_loss += loss.item() 
@@ -175,7 +178,7 @@ def evaluate(net,
 
 def main():
   #################################
-  wandb.init()
+  wandb.init(project="Slurm")
   #################################
   input_dim=6
   spatial_dims=[0,1,2]
@@ -211,7 +214,9 @@ def main():
   logging.info("GPU type:\n{}".format(torch.cuda.get_device_name(0)))
   logging.info("Number of GPU: {}".format(torch.cuda.device_count()))
   # Setting default tensor type to cuda
-  torch.set_default_tensor_type(torch.cuda.FloatTensor)
+  global device
+  device = torch.device('cuda')
+
 
   criterion = nn.functional.binary_cross_entropy
   if not args.evaluate:
@@ -233,15 +238,15 @@ def main():
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
     ####################################
-    with torch.autograd.profiler.profile() as prof:
-        train(
+    #with torch.autograd.profiler.profile(use_cuda=True) as prof:
+    train(
               net,
               criterion,
               args,
               experiment_dir,
               multi_train_loader,
               valid_loader
-              )
+         )
 
   # Perform evaluation over test set
   try:
@@ -261,7 +266,7 @@ def main():
                         TEST_NAME)
 
   #####################################
-  print(prof.key_averages().table(sort_by="self_cpu_time_total"))
+  #print(prof.key_averages().table(sort_by="self_cpu_time_total"))
 
 if __name__ == "__main__":
   main()

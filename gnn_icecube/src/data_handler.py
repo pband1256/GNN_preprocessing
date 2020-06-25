@@ -4,13 +4,16 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
+
 def construct_loader(data_path, nb_samples, batch_size, shuffle=False):
     dataset = IceCube_Dataset(data_path, nb_samples)
     loader = DataLoader(dataset=dataset,
                         batch_size=batch_size,
                         shuffle=shuffle,
                         drop_last=True,
-                        collate_fn=collate_icecube)
+                        collate_fn=collate_icecube,
+                        pin_memory=True,
+                        num_workers=6)
     return loader
 
 def collate_icecube(samples):
@@ -22,11 +25,11 @@ def collate_icecube(samples):
 
     X, adj_mask, batch_nb_nodes = pad_batch(X)
     
-    X = torch.cuda.FloatTensor(X)
-    y = torch.cuda.FloatTensor(y)
-    w = torch.cuda.FloatTensor(w)
-    adj_mask = torch.cuda.FloatTensor(adj_mask)
-    batch_nb_nodes = torch.cuda.FloatTensor(batch_nb_nodes)
+    X = torch.FloatTensor(X)
+    y = torch.FloatTensor(y)
+    w = torch.FloatTensor(w)
+    adj_mask = torch.FloatTensor(adj_mask)
+    batch_nb_nodes = torch.FloatTensor(batch_nb_nodes)
     return X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names
 
 def pad_batch(X):

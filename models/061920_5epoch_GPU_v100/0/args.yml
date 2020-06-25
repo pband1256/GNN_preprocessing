@@ -1,0 +1,29 @@
+!!python/object:argparse.Namespace
+batch_size: 64
+best_tpr: 0.010281046206688483
+eval_tpr: 3.0e-06
+evaluate: false
+lrate: 0.05
+name: 061920_5epoch_GPU_v100
+nb_epoch: 3
+nb_epochs_complete: 3
+nb_hidden: 64
+nb_layer: 10
+nb_test: 100000
+nb_train: 100000
+nb_val: 100000
+patience: 200
+run: '0'
+test_file: /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/test_file.pkl
+train_file:
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_1.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_10.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_2.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_3.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_4.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_5.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_6.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_7.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_8.pkl
+- /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file_9.pkl
+val_file: /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/val_file.pkl
