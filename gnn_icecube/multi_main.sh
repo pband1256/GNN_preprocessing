@@ -6,7 +6,7 @@
 #SBATCH --time=1-23:59:00
 #SBATCH --gres=gpu:k80:1
 #SBATCH --nodes=1
-#SBATCH --mem=100G
+#SBATCH --mem=50G
 #SBATCH --mail-type=FAIL # notifications for job fail
 #SBATCH --mail-user=lehieu1
 

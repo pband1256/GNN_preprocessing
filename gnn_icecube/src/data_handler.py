@@ -13,7 +13,7 @@ def construct_loader(data_path, nb_samples, batch_size, shuffle=False):
                         drop_last=True,
                         collate_fn=collate_icecube,
                         pin_memory=True,
-                        num_workers=8)  # 8 workers for 5 cores
+                        num_workers=0)
     return loader
 
 def collate_icecube(samples):
