@@ -93,25 +93,26 @@ def train(
                                   args,
                                   experiment_dir,
                                   train_loader)
-    val_stats = evaluate(net, criterion, experiment_dir, args,
-                            valid_loader, 'Valid')
-                                
-    utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
+    if (((i+1) % len(multi_train_loader)) == 0):
+      val_stats = evaluate(net, criterion, experiment_dir, args,
+                            valid_loader, 'Valid')                          
+      utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
 
-    # Update learning rate, remaining nb epochs to train
-    scheduler.step(val_stats[0])
+      # Update learning rate, remaining nb epochs to train
+      scheduler.step(val_stats[0])
+
+      # Track best model performance
+      if (val_stats[0] > args.best_tpr):
+        logging.warning("Best performance on valid set.")
+        args.best_tpr = float(val_stats[0])
+        utils.update_best_plots(experiment_dir)
+        utils.save_best_model(experiment_dir, net)
+        utils.save_best_scores(i, val_stats[2], val_stats[0], val_stats[1], experiment_dir)
+        utils.save_epoch_model(experiment_dir, net)
+
     args.lrate = optimizer.param_groups[0]['lr']
     args.nb_epochs_complete += 1
 
-    # Track best model performance
-    if (val_stats[0] > args.best_tpr):
-      logging.warning("Best performance on valid set.")
-      args.best_tpr = float(val_stats[0])
-      utils.update_best_plots(experiment_dir)
-      utils.save_best_model(experiment_dir, net)
-      utils.save_best_scores(i, val_stats[2], val_stats[0], val_stats[1], experiment_dir)
-
-    utils.save_epoch_model(experiment_dir, net)
     utils.save_args(experiment_dir, args)
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
