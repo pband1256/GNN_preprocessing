@@ -177,9 +177,6 @@ def evaluate(net,
 
 
 def main():
-  #################################
-  wandb.init(project="Slurm")
-  #################################
   input_dim=6
   spatial_dims=[0,1,2]
   args = utils.read_args()
@@ -198,6 +195,10 @@ def main():
       args.best_tpr = 0.0
       args.nb_epochs_complete = 0 # Track in case training interrupted
       utils.save_args(experiment_dir, args) # Save initial args
+
+  #################################
+  wandb.init(project=args.project, name=args.name)
+  #################################
 
   net = utils.create_or_restore_model(
                                     experiment_dir, 
@@ -237,8 +238,6 @@ def main():
                                           len(multi_train_loader)*len(train_loader)*args.batch_size))
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
-    ####################################
-    #with torch.autograd.profiler.profile(use_cuda=True) as prof:
     train(
               net,
               criterion,
@@ -264,9 +263,6 @@ def main():
                         args,
                         test_loader,
                         TEST_NAME)
-
-  #####################################
-  #print(prof.key_averages().table(sort_by="self_cpu_time_total"))
 
 if __name__ == "__main__":
   main()

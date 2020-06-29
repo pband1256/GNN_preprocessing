@@ -13,4 +13,4 @@ requirements = (OpSysMajorVer =?= 7)
 notification = Error
 notify_user = lehieu1@msu.edu
 
-queue
+queue 3

@@ -14,6 +14,7 @@ NB_TEST=100000
 DATE=$(date +'%m%d%y')
 NAME="${DATE}_even_more_benchmarking"
 RUN=$1
+PROJECT="Illume"
 
 PATIENCE=20
 NB_EPOCH=200
@@ -31,7 +32,7 @@ NB_EPOCH=`expr ${NB_EPOCH} \* ${NB_FILE}`
 TRAINFILE_SLICED=${TRAINFILE[@]:0:${NB_FILE}}
 
 # Entering arguments
-PYARGS="--name $NAME --run $RUN --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN"
+PYARGS="--name $NAME --run $RUN --project $PROJECT --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN"
 
 #echo "CUDA_VISIBLE_DEVICES $CUDA_VISIBLE_DEVICES"
 echo -e "\nStarting experiment with name $NAME...\n"

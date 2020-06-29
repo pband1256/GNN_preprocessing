@@ -40,6 +40,7 @@ def read_args():
 
   # Experiment
   add_arg('--name', help='Experiment reference name', required=True)
+  add_arg('--project', help='wandb projecet run name', default=0)
   add_arg('--run', help='Experiment run number', default=0)
   add_arg('--eval_tpr',help='FPR at which TPR will be evaluated', default=0.000003)
   add_arg('--evaluate', help='Perform evaluation on test set only',action='store_true')
