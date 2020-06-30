@@ -3,7 +3,7 @@
 #SBATCH --account=deyoungbuyin
 #SBATCH --job-name=IceCube_GNN
 #SBATCH --output=/mnt/scratch/lehieu1/log/GNN/GNN_%A_%a.out
-#SBATCH --time=23:59:00
+#SBATCH --time=1-23:59:00
 #SBATCH --gres=gpu:v100:1
 #SBATCH --nodes=1
 #SBATCH --mem=50G
@@ -13,9 +13,9 @@
 #mkdir -p slurm_out
 
 # Dataset
-TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_multi/train_file* )
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_multi/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/500GeV_min_cuts_multi/test_file.pkl'
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file* )
+VALFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/val_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/test_file.pkl'
 
 NB_FILE=10
 NB_TRAIN=1000000
@@ -25,12 +25,12 @@ NB_TEST=100000
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-NAME="${DATE: -6}_test"
+NAME="${DATE: -6}_10x100k_infpatience"
 RUN="$SLURM_ARRAY_TASK_ID"
 PROJECT="HPCC"
 
-PATIENCE=20
-NB_EPOCH=50
+PATIENCE=200
+NB_EPOCH=150
 LRATE=0.05
 BATCH_SIZE=32
 
@@ -53,7 +53,7 @@ module load powertools
 source /mnt/home/lehieu1/anaconda3/etc/profile.d/conda.sh
 conda activate /mnt/ufs18/home-105/lehieu1/load_conda_env/GNN_conda
 
-time python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/multi_main.py $PYARGS
+python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/multi_main.py $PYARGS
 
 # Printing job statistics
 js -j ${SLURM_JOB_ID}

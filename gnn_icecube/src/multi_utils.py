@@ -277,7 +277,7 @@ def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
   test_scores = {'nb_eval':nb_eval,
                  'epoch_loss':epoch_loss,
                  'tpr':float(tpr),
-                 'roc auc':float(roc).
+                 'roc auc':float(roc),
                  'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
   with open(pred_file, 'x') as f:
