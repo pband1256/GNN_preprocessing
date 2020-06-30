@@ -6,7 +6,7 @@ import pickle
 import yaml
 import numpy as np
 
-from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score
 
 import matplotlib; matplotlib.use('Agg') # no display on clusters
 import matplotlib.pyplot as plt
@@ -104,7 +104,7 @@ def initialize_experiment(experiment_dir):
   csv_path = os.path.join(experiment_dir, STATS_CSV)
   with open(csv_path, 'w') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['Epoch', 'lrate', 'train_tpr', 'train_roc', 'train_loss', 'val_tpr', 'val_roc', 'val_loss', 'running_loss'])
+    writer.writerow(['Epoch', 'lrate', 'train_tpr', 'train_roc', 'train_loss', 'val_tpr', 'val_roc', 'val_loss', 'val_acc', 'running_loss'])
 
 
 ###########################
@@ -273,20 +273,22 @@ def save_preds(evt_id, f_name, pred_y, experiment_dir):
     for e, f, y in zip(evt_id, f_name, pred_y):
       writer.writerow((e, f, y))
 
-def save_test_scores(nb_eval, epoch_loss, tpr, roc, experiment_dir):
+def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
   test_scores = {'nb_eval':nb_eval,
                  'epoch_loss':epoch_loss,
                  'tpr':float(tpr),
-                 'roc auc':float(roc)}
+                 'roc auc':float(roc).
+                 'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
   with open(pred_file, 'x') as f:
     yaml.dump(test_scores, f, default_flow_style=False)
 
-def save_best_scores(epoch, epoch_loss, tpr, roc, experiment_dir):
+def save_best_scores(epoch, epoch_loss, tpr, roc, acc, experiment_dir):
   best_scores = {'epoch':epoch,
                  'epoch_loss':epoch_loss,
                  'tpr':float(tpr),
-                 'roc auc':float(roc)}
+                 'roc auc':float(roc),
+                 'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'best_scores.yml')
   with open(pred_file, 'w') as f:
     yaml.dump(best_scores, f, default_flow_style=False)

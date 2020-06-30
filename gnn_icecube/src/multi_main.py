@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 
 import multi_utils as utils
 import model
@@ -107,7 +107,7 @@ def train(
         args.best_tpr = float(val_stats[0])
         utils.update_best_plots(experiment_dir)
         utils.save_best_model(experiment_dir, net)
-        utils.save_best_scores(i, val_stats[2], val_stats[0], val_stats[1], experiment_dir)
+        utils.save_best_scores(i, val_stats[2], val_stats[0], val_stats[1], val_stats[3], experiment_dir)
         utils.save_epoch_model(experiment_dir, net)
 
     args.lrate = optimizer.param_groups[0]['lr']
@@ -168,13 +168,14 @@ def evaluate(net,
     epoch_loss /= nb_eval # Normalize loss
     tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, plot_name, args.eval_tpr)
-    logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e}".format(
-                                      plot_name, epoch_loss, roc, tpr))
+    acc_score = accuracy_score(true_y, pred_y, sample_weight=weights)
+    logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e} -- Acc {:>.3e}".format(
+                                      plot_name, epoch_loss, roc, tpr, acc_score))
 
     if plot_name == TEST_NAME:
-        utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, experiment_dir)
+        utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
         utils.save_preds(evt_id, f_name, pred_y, experiment_dir)
-    return (tpr, roc, epoch_loss)
+    return (tpr, roc, epoch_loss, acc_score)
 
 
 def main():
