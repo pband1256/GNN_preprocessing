@@ -1,1 +1,3 @@
 gnn_icecube/wandb/
+.ipynb_checkpoints/
+gnn_icecube/src/.ipynb_checkpoints/

@@ -252,6 +252,25 @@ def update_best_plots(experiment_dir):
       old_name = os.path.join(experiment_dir, f)
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
+    
+def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
+  '''
+  Plot and save prediction histogram.
+  '''
+  pos = pred_y[true_y == 1]
+  neg = pred_y[true_y == 0]
+  # Plot
+  plt.clf()
+  plt.hist(pos, bins=20, weights=weights, label='Track')
+  plt.hist(neg, bins=20, weights=weights, label='Cascade')
+  # Style
+  plt.xlabel("Probability")
+  plt.ylabel("Counts")
+  plt.legend()
+  #Save
+  plotfile = os.path.join(experiment_dir, 'pred_hist.png')
+  plt.savefig(plotfile)
+  plt.clf()
       
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
   '''
@@ -277,7 +296,7 @@ def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
   test_scores = {'nb_eval':nb_eval,
                  'epoch_loss':epoch_loss,
                  'tpr':float(tpr),
-                 'roc auc':float(roc).
+                 'roc auc':float(roc),
                  'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
   with open(pred_file, 'x') as f:

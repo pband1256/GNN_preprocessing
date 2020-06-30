@@ -173,6 +173,7 @@ def evaluate(net,
                                       plot_name, epoch_loss, roc, tpr, acc_score))
 
     if plot_name == TEST_NAME:
+        utils.plot_pred_hist(true_y, pred_y, weights, experiment_dir)
         utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
         utils.save_preds(evt_id, f_name, pred_y, experiment_dir)
     return (tpr, roc, epoch_loss, acc_score)

@@ -168,11 +168,12 @@ def evaluate(net,
     epoch_loss /= nb_eval # Normalize loss
     tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, plot_name, args.eval_tpr)
-    acc_score = accuracy_score(true_y, pred_y, sample_weight=weights)
+    acc_score = accuracy_score(true_y, pred_y.round(), sample_weight=weights)
     logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e} -- Acc {:>.3e}".format(
                                       plot_name, epoch_loss, roc, tpr, acc_score))
 
     if plot_name == TEST_NAME:
+        utils.plot_pred_hist(true_y, pred_y, weights, experiment_dir)
         utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
         utils.save_preds(evt_id, f_name, pred_y, experiment_dir)
     return (tpr, roc, epoch_loss, acc_score)
