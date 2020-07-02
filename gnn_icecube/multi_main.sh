@@ -10,10 +10,8 @@
 #SBATCH --mail-type=FAIL # notifications for job fail
 #SBATCH --mail-user=lehieu1
 
-#mkdir -p slurm_out
-
 # Dataset
-TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi_5050/train_file* )
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file* )
 VALFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/val_file.pkl'
 TESTFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/test_file.pkl'
 
@@ -25,8 +23,10 @@ NB_TEST=100000
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-NAME="${DATE: -6}_5050_8515valtest_10x100k_20patience"
-RUN="$SLURM_ARRAY_TASK_ID"
+#NAME="${DATE: -6}_5050_8515valtest_10x100k_20patience"
+NAME="063020_5050_8515valtest_10x100k_20patience"
+#RUN="$SLURM_ARRAY_TASK_ID"
+RUN="2"
 PROJECT="HPCC"
 
 PATIENCE=20
