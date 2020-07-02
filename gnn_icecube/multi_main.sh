@@ -13,7 +13,7 @@
 #mkdir -p slurm_out
 
 # Dataset
-TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file* )
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi_5050/train_file* )
 VALFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/val_file.pkl'
 TESTFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/test_file.pkl'
 
@@ -25,11 +25,11 @@ NB_TEST=100000
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-NAME="${DATE: -6}_10x100k_infpatience"
+NAME="${DATE: -6}_5050_8515valtest_10x100k_20patience"
 RUN="$SLURM_ARRAY_TASK_ID"
 PROJECT="HPCC"
 
-PATIENCE=200
+PATIENCE=20
 NB_EPOCH=150
 LRATE=0.05
 BATCH_SIZE=32

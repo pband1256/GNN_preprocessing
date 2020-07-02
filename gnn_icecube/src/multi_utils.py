@@ -261,8 +261,8 @@ def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
   neg = pred_y[true_y == 0]
   # Plot
   plt.clf()
-  plt.hist(pos, bins=20, weights=weights, label='Track')
-  plt.hist(neg, bins=20, weights=weights, label='Cascade')
+  plt.hist(pos, bins=20, label='Track')
+  plt.hist(neg, bins=20, label='Cascade')
   # Style
   plt.xlabel("Probability")
   plt.ylabel("Counts")
