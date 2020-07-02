@@ -241,14 +241,14 @@ def main():
                                           len(multi_train_loader)*len(train_loader)*args.batch_size))
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
-#     train(
-#               net,
-#               criterion,
-#               args,
-#               experiment_dir,
-#               multi_train_loader,
-#               valid_loader
-#          )
+    train(
+              net,
+              criterion,
+              args,
+              experiment_dir,
+              multi_train_loader,
+              valid_loader
+         )
 
   # Perform evaluation over test set
   try:
