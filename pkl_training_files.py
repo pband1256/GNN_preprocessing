@@ -30,15 +30,12 @@ parser.add_argument("-i", "--input",type=str,
 parser.add_argument("-o", "--output",type=str,
                     dest="output_name",help="path and name for output file")
 parser.add_argument("-g", "--gcd",type=str,default="/mnt/research/IceCube/gcd_file/GeoCalibDetectorStatus_AVG_55697-57531_PASS2_SPE_withScaledNoise.i3.gz",dest='geofile',help="path for GCD file")
-parser.add_argument("--emin",type=float,default=0.0,
-                    dest="emin",help="Min energy to keep, cut anything below")
 parser.add_argument("--true_name",type=str,default=None,
                     dest="true_name", help="Name of key for true particle info if you want to check with I3MCTree_preMuonProp[0]")
 
 args = parser.parse_args()
 input_file = args.input_file
 output_name = args.output_name
-emin = args.emin
 geofile = dataio.I3File(args.geofile)
 true_name = args.true_name
 
@@ -134,7 +131,7 @@ def GetStringLocations(geo_file):
 def GetCoords(string, dom, StringLocations):
     return StringLocations[1][StringLocations[0].tolist().index((string,dom))]
 
-def read_files(filename_list, geofile, emin):
+def read_files(filename_list, geofile):
     """
     Read list of files, make sure they pass L5 cuts, create truth labels
     Receives:
@@ -252,8 +249,8 @@ def read_files(filename_list, geofile, emin):
                 continue
             
             # Only look at "high energy" events for tracks for now
-            if nu_energy < emin and isTrack:
-                continue
+            #if nu_energy < emin and isTrack:
+            #    continue
             
             IC_array = get_observable_features(frame,StringLocations)
 
@@ -294,7 +291,7 @@ assert event_file_names,"No files loaded, please check path."
 
 #Call function to read and label files
 #features_IC, labels, num_pulses_per_dom, = read_files(event_file_names)
-X, y, w, e, f, E = read_files(event_file_names,geofile,emin)
+X, y, w, e, f, E = read_files(event_file_names,geofile)
 full_data = [X,y,w,e,f,E]
 
 #Save output to pickle file

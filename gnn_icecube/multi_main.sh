@@ -11,22 +11,20 @@
 #SBATCH --mail-user=lehieu1
 
 # Dataset
-TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi/train_file* )
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi/test_file.pkl'
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/10e3_10e8_GeV_5050/train_file* )
+VALFILE='/mnt/scratch/lehieu1/training_files/processed/10e3_10e8_GeV_5050/val_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/processed/10e3_10e8_GeV_5050/test_file.pkl'
 
 NB_FILE=10
-NB_TRAIN=1000000
-NB_VAL=100000
-NB_TEST=100000
+NB_TRAIN=150000
+NB_VAL=15000
+NB_TEST=15000
 
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-#NAME="${DATE: -6}_5050_8515valtest_10x100k_20patience"
-NAME="063020_5050_8515valtest_10x100k_20patience"
-#RUN="$SLURM_ARRAY_TASK_ID"
-RUN="2"
+NAME="${DATE: -6}_10e3_10e8_GeV_5050"
+RUN="$SLURM_ARRAY_TASK_ID"
 PROJECT="HPCC"
 
 PATIENCE=20
@@ -40,7 +38,7 @@ NB_HIDDEN=64
 
 # Modify parameters to fit multi-file submission
 NB_TRAIN=`expr ${NB_TRAIN} / ${NB_FILE}`
-PATIENCE=`expr ${PATIENCE} \* ${NB_FILE}`
+#PATIENCE=`expr ${PATIENCE} \* ${NB_FILE}`
 NB_EPOCH=`expr ${NB_EPOCH} \* ${NB_FILE}`
 TRAINFILE_SLICED=${TRAINFILE[@]:0:${NB_FILE}}
 

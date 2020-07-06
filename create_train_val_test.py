@@ -13,10 +13,14 @@ parser.add_argument("-e", "--nb_test",type=int,default=10,
                     dest="nb_test",help="number of test files")
 parser.add_argument("-n", "--nb_split",type=int,default=1,
                     dest="nb_split",help="number of files to split into")
-parser.add_argument("-i", "--input",type=str,default="/mnt/scratch/lehieu1/training_files",
+parser.add_argument("-i", "--input",type=str,default="/mnt/scratch/lehieu1/training_files/with_energy/",
                     dest="inp",help="path to directory of input pickle files")
-parser.add_argument("-o", "--output",type=str,default="/mnt/scratch/lehieu1/training_files/processed",
+parser.add_argument("-o", "--output",type=str,default="/mnt/scratch/lehieu1/training_files/processed/",
                     dest="out",help="path to directory of output pickle files")
+parser.add_argument("--emin",type=float,default=0,
+                    dest="emin",help="minimum energy")
+parser.add_argument("--emax",type=float,default=float('inf'),
+                    dest="emax",help="maximum energy")
 args = parser.parse_args()
 
 # Masking non-coordinate features of feature array
@@ -59,6 +63,11 @@ def create_equal_samples(data):
 
     return data
 
+def energy_cut(data, emin=0, emax=float('inf')):
+    E = np.asarray(data[5])
+    ind = (E > emin) & (E < emax)
+    return np.asarray(data)[:, ind].tolist() 
+
 # Open pickled .i3 files one by one and concatenate all data into master arrays
 def pickleList(fileList):
     first = True
@@ -85,7 +94,6 @@ def pickleList(fileList):
             print("Error: file "+fileName+" failed to pickle correctly. Skipping file")
             print(e)
             continue
-
     ####### Masking weights
     w_all = np.ones(np.shape(w_all))
     ####### Masking features
@@ -95,6 +103,8 @@ def pickleList(fileList):
     
     data = [X_all,y_all,w_all,e_all,f_all,E_all]
 
+    ####### Energy cuts
+    data = energy_cut(data, args.emin, args.emax)
     ####### Creating 50/50 sample
     data = create_equal_samples(data)
 
@@ -103,6 +113,7 @@ def pickleList(fileList):
 # Shuffling ALL files in folder to make sure there's no systematic problem. Probably overkill.
 nb_total = args.nb_train + args.nb_val + args.nb_test
 total_file = glob.glob(args.inp + '/*.pkl')
+assert nb_total <= len(total_file), "Not enough files to create samples."
 random.shuffle(total_file)
 
 if args.nb_train != 0:
