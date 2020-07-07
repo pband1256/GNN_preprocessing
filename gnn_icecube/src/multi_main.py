@@ -116,7 +116,7 @@ def train(
     utils.save_args(experiment_dir, args)
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
-    if args.lrate < 10**-6:
+    if args.lrate < 10**-4:
         logging.warning("Minimum learning rate reached.")
         break
 
@@ -168,12 +168,17 @@ def evaluate(net,
     epoch_loss /= nb_eval # Normalize loss
     tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, plot_name, args.eval_tpr)
-    acc_score = accuracy_score(true_y, pred_y.round(), sample_weight=weights)
+    threshold = 0.7
+    pred_y_rounded = (pred_y - threshold + 0.5).round()
+    acc_score = accuracy_score(true_y, pred_y_rounded, sample_weight=weights)
     logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e} -- Acc {:>.3e}".format(
                                       plot_name, epoch_loss, roc, tpr, acc_score))
 
     if plot_name == TEST_NAME:
-        utils.plot_pred_hist(true_y, pred_y, weights, experiment_dir)
+        labels = ['Cascade','Track']
+        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, normalize='true', labels=labels)
+        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, normalize='pred', labels=labels)
+        utils.plot_pred_hist(true_y, pred_y, experiment_dir)
         utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
         utils.save_preds(evt_id, f_name, pred_y, experiment_dir)
     return (tpr, roc, epoch_loss, acc_score)

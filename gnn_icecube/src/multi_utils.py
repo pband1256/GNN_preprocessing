@@ -6,7 +6,7 @@ import pickle
 import yaml
 import numpy as np
 
-from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score
+from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score, confusion_matrix
 
 import matplotlib; matplotlib.use('Agg') # no display on clusters
 import matplotlib.pyplot as plt
@@ -253,7 +253,7 @@ def update_best_plots(experiment_dir):
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
     
-def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
+def plot_pred_hist(true_y, pred_y, experiment_dir):
   '''
   Plot and save prediction histogram.
   '''
@@ -261,8 +261,8 @@ def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
   neg = pred_y[true_y == 0]
   # Plot
   plt.clf()
-  plt.hist(pos, bins=20, label='Track')
-  plt.hist(neg, bins=20, label='Cascade')
+  plt.hist(pos, bins=20, label='Track', alpha=0.5)
+  plt.hist(neg, bins=20, label='Cascade', alpha=0.5)
   # Style
   plt.xlabel("Probability")
   plt.ylabel("Counts")
@@ -271,7 +271,29 @@ def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
   plotfile = os.path.join(experiment_dir, 'pred_hist.png')
   plt.savefig(plotfile)
   plt.clf()
-      
+ 
+def plot_confusion(true_y, pred_y, experiment_dir, normalize=None, labels=None):
+  '''
+  Plot and save confusion matrices.
+  '''
+  conf_matrix = confusion_matrix(true_y, pred_y, normalize=normalize)
+  # Plot
+  plt.clf()
+  cmap = 'Blues'
+  plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
+  # Style
+  ticks = np.arange(conf_matrix.shape[0])
+  plt.xticks(ticks, labels)
+  plt.yticks(ticks, labels)
+  plt.xlabel("Predicted label")
+  plt.ylabel("True label")
+  plt.title("Normalized on "+str(normalize))
+  plt.colorbar()
+  #Save
+  plotfile = os.path.join(experiment_dir, 'conf_'+str(normalize)+'.png')
+  plt.savefig(plotfile)
+  plt.clf()
+     
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
   '''
   Write loss, fpr, roc_auc information to .csv file in model directory.

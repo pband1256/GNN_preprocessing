@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from sklearn.utils import shuffle
 
-with open('/mnt/scratch/lehieu1/training_files/processed/10e5_10e8_GeV_5050/train_file_10.pkl','rb') as f:
+with open('/mnt/scratch/lehieu1/training_files/processed/nocuts_multi_5050/train_file_10.pkl','rb') as f:
     X,y,w,e,f,E = pickle.load(f)
 
 print(np.size(E))
