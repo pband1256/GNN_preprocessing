@@ -234,8 +234,8 @@ def plot_roc_curve(fprs, tprs, experiment_dir, plot_name, performance):
   plt.xlabel("False Positive Rate (1- BG rejection)")
   plt.ylabel("True Positive Rate (Signal Efficiency)")
   plt.scatter(performance[0], performance[1], label='GNN')
-  plt.scatter(CURRENT_BASELINE[0], CURRENT_BASELINE[1], label='Baseline')
-  plt.legend()
+  #plt.scatter(CURRENT_BASELINE[0], CURRENT_BASELINE[1], label='Baseline')
+  #plt.legend()
   plt.grid(linestyle=':')
   #Save
   plotfile = os.path.join(experiment_dir, '{}.png'.format(plot_name))
@@ -253,6 +253,50 @@ def update_best_plots(experiment_dir):
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
       
+def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
+  '''
+  Plot and save prediction histogram.
+  '''
+  pos = pred_y[true_y == 1]
+  neg = pred_y[true_y == 0]
+  # Plot
+  plt.clf()
+  plt.hist(pos, bins=20, label='Track', alpha=0.5)
+  plt.hist(neg, bins=20, label='Cascade', alpha=0.5)
+  # Style
+  plt.xlabel("Probability")
+  plt.ylabel("Counts")
+  plt.title(plot_name)
+  plt.legend()
+  #Save
+  plotfile = os.path.join(experiment_dir, 'pred_hist.png')
+  plt.savefig(plotfile)
+  plt.clf()
+ 
+def plot_confusion(true_y, pred_y, experiment_dir, plot_name, normalize=None, labels=None):
+  '''
+  Plot and save confusion matrices.
+  '''
+  conf_matrix = confusion_matrix(true_y, pred_y, normalize=normalize).transpose()
+  # Plot
+  plt.clf()
+  cmap = 'Blues'
+  plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
+  for (j,i),label in np.ndenumerate(conf_matrix):
+    plt.text(i,j,label,ha='center',va='center')
+  # Style
+  ticks = np.arange(conf_matrix.shape[0])
+  plt.xticks(ticks, labels)
+  plt.yticks(ticks, labels)
+  plt.ylabel("Predicted label")
+  plt.xlabel("True label")
+  plt.title("Normalized on "+str(normalize)+"\n"+plot_name)
+  plt.colorbar()
+  #Save
+  plotfile = os.path.join(experiment_dir, 'conf_'+str(normalize)+'.png')
+  plt.savefig(plotfile)
+  plt.clf()
+        
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
   '''
   Write loss, fpr, roc_auc information to .csv file in model directory.
@@ -273,20 +317,22 @@ def save_preds(evt_id, f_name, pred_y, experiment_dir):
     for e, f, y in zip(evt_id, f_name, pred_y):
       writer.writerow((e, f, y))
 
-def save_test_scores(nb_eval, epoch_loss, tpr, roc, experiment_dir):
+def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
   test_scores = {'nb_eval':nb_eval,
                  'epoch_loss':epoch_loss,
                  'tpr':float(tpr),
-                 'roc auc':float(roc)}
+                 'roc auc':float(roc),
+                 'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
   with open(pred_file, 'x') as f:
     yaml.dump(test_scores, f, default_flow_style=False)
 
-def save_best_scores(epoch, epoch_loss, tpr, roc, experiment_dir):
+def save_best_scores(epoch, epoch_loss, tpr, roc, acc, experiment_dir):
   best_scores = {'epoch':epoch,
                  'epoch_loss':epoch_loss,
                  'tpr':float(tpr),
-                 'roc auc':float(roc)}
+                 'roc auc':float(roc),
+                 'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'best_scores.yml')
   with open(pred_file, 'w') as f:
     yaml.dump(best_scores, f, default_flow_style=False)

@@ -40,22 +40,22 @@ def train_one_epoch(net,
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
     X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
     optimizer.zero_grad()
-    t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
     loss = criterion(out, y, w).cuda()
     loss.backward()
     optimizer.step()
+    
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
     pred_y[beg:end]  = out.data.cpu().numpy()
     true_y[beg:end]  = y.data.cpu().numpy()
     weights[beg:end] = w.data.cpu().numpy()
+    
     epoch_loss += loss.item()
     # Print running loss about 10 times during each epoch
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
-      #print("Summary: ", torch.cuda.memory_summary())
 
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
@@ -75,7 +75,7 @@ def train(
           valid_loader
           ):
   optimizer = torch.optim.Adamax(net.parameters(), lr=args.lrate)
-  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max',patience=args.patience)
+  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=args.patience)
   # Nb epochs completed tracked in case training interrupted
   for i in range(args.nb_epochs_complete, args.nb_epoch):
     # Update learning rate in optimizer
@@ -116,7 +116,7 @@ def train(
     utils.save_args(experiment_dir, args)
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
-    if args.lrate < 10**-6:
+    if args.lrate < 10**-4:
         logging.warning("Minimum learning rate reached.")
         break
 
@@ -168,12 +168,17 @@ def evaluate(net,
     epoch_loss /= nb_eval # Normalize loss
     tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, plot_name, args.eval_tpr)
-    acc_score = accuracy_score(true_y, pred_y.round(), sample_weight=weights)
+    threshold = 0.7
+    pred_y_rounded = (pred_y - threshold + 0.5).round()
+    acc_score = accuracy_score(true_y, pred_y_rounded, sample_weight=weights)
     logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e} -- Acc {:>.3e}".format(
                                       plot_name, epoch_loss, roc, tpr, acc_score))
 
     if plot_name == TEST_NAME:
-        utils.plot_pred_hist(true_y, pred_y, weights, experiment_dir)
+        labels = ['Cascade','Track']
+        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, args.name, normalize='true', labels=labels)
+        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, args.name, normalize='pred', labels=labels)
+        utils.plot_pred_hist(true_y, pred_y, experiment_dir, args.name)
         utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
         utils.save_preds(evt_id, f_name, pred_y, experiment_dir)
     return (tpr, roc, epoch_loss, acc_score)
@@ -200,7 +205,7 @@ def main():
       utils.save_args(experiment_dir, args) # Save initial args
 
   #################################
-  wandb.init(project=args.project, name=args.name)
+  #wandb.init(project=args.project, name=args.name)
   #################################
 
   net = utils.create_or_restore_model(
@@ -221,7 +226,6 @@ def main():
   global device
   device = torch.device('cuda')
 
-
   criterion = nn.functional.binary_cross_entropy
   if not args.evaluate:
     assert (args.train_file != None)
@@ -241,14 +245,14 @@ def main():
                                           len(multi_train_loader)*len(train_loader)*args.batch_size))
     logging.info("Validate on {} samples.".format(
                                           len(valid_loader)*args.batch_size))
-#     train(
-#               net,
-#               criterion,
-#               args,
-#               experiment_dir,
-#               multi_train_loader,
-#               valid_loader
-#          )
+    train(
+              net,
+              criterion,
+              args,
+              experiment_dir,
+              multi_train_loader,
+              valid_loader
+         )
 
   # Perform evaluation over test set
   try:

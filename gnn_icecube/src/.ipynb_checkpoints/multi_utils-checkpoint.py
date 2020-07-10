@@ -6,7 +6,7 @@ import pickle
 import yaml
 import numpy as np
 
-from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score
+from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score, confusion_matrix
 
 import matplotlib; matplotlib.use('Agg') # no display on clusters
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ def read_args():
 
   # Experiment
   add_arg('--name', help='Experiment reference name', required=True)
-  add_arg('--project', help='wandb projecet run name', default=0)
+  add_arg('--project', help='wandb project run name', default=0)
   add_arg('--run', help='Experiment run number', default=0)
   add_arg('--eval_tpr',help='FPR at which TPR will be evaluated', default=0.000003)
   add_arg('--evaluate', help='Perform evaluation on test set only',action='store_true')
@@ -234,8 +234,8 @@ def plot_roc_curve(fprs, tprs, experiment_dir, plot_name, performance):
   plt.xlabel("False Positive Rate (1- BG rejection)")
   plt.ylabel("True Positive Rate (Signal Efficiency)")
   plt.scatter(performance[0], performance[1], label='GNN')
-  plt.scatter(CURRENT_BASELINE[0], CURRENT_BASELINE[1], label='Baseline')
-  plt.legend()
+  #plt.scatter(CURRENT_BASELINE[0], CURRENT_BASELINE[1], label='Baseline')
+  #plt.legend()
   plt.grid(linestyle=':')
   #Save
   plotfile = os.path.join(experiment_dir, '{}.png'.format(plot_name))
@@ -253,7 +253,7 @@ def update_best_plots(experiment_dir):
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
     
-def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
+def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
   '''
   Plot and save prediction histogram.
   '''
@@ -261,17 +261,42 @@ def plot_pred_hist(true_y, pred_y, weights, experiment_dir):
   neg = pred_y[true_y == 0]
   # Plot
   plt.clf()
-  plt.hist(pos, bins=20, weights=weights, label='Track')
-  plt.hist(neg, bins=20, weights=weights, label='Cascade')
+  plt.hist(pos, bins=20, label='Track', alpha=0.5)
+  plt.hist(neg, bins=20, label='Cascade', alpha=0.5)
   # Style
   plt.xlabel("Probability")
   plt.ylabel("Counts")
+  plt.title(plot_name)
   plt.legend()
   #Save
   plotfile = os.path.join(experiment_dir, 'pred_hist.png')
   plt.savefig(plotfile)
   plt.clf()
-      
+ 
+def plot_confusion(true_y, pred_y, experiment_dir, plot_name, normalize=None, labels=None):
+  '''
+  Plot and save confusion matrices.
+  '''
+  conf_matrix = confusion_matrix(true_y, pred_y, normalize=normalize).transpose()
+  # Plot
+  plt.clf()
+  cmap = 'Blues'
+  plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
+  for (j,i),label in np.ndenumerate(conf_matrix):
+    plt.text(i,j,label,ha='center',va='center')
+  # Style
+  ticks = np.arange(conf_matrix.shape[0])
+  plt.xticks(ticks, labels)
+  plt.yticks(ticks, labels)
+  plt.ylabel("Predicted label")
+  plt.xlabel("True label")
+  plt.title("Normalized on "+str(normalize)+"\n"+plot_name)
+  plt.colorbar()
+  #Save
+  plotfile = os.path.join(experiment_dir, 'conf_'+str(normalize)+'.png')
+  plt.savefig(plotfile)
+  plt.clf()
+     
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
   '''
   Write loss, fpr, roc_auc information to .csv file in model directory.

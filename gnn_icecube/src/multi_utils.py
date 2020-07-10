@@ -234,8 +234,8 @@ def plot_roc_curve(fprs, tprs, experiment_dir, plot_name, performance):
   plt.xlabel("False Positive Rate (1- BG rejection)")
   plt.ylabel("True Positive Rate (Signal Efficiency)")
   plt.scatter(performance[0], performance[1], label='GNN')
-  plt.scatter(CURRENT_BASELINE[0], CURRENT_BASELINE[1], label='Baseline')
-  plt.legend()
+  #plt.scatter(CURRENT_BASELINE[0], CURRENT_BASELINE[1], label='Baseline')
+  #plt.legend()
   plt.grid(linestyle=':')
   #Save
   plotfile = os.path.join(experiment_dir, '{}.png'.format(plot_name))

@@ -40,22 +40,22 @@ def train_one_epoch(net,
     X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
     X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
     optimizer.zero_grad()
-    t0 = time.time()
     out = net(X, adj_mask, batch_nb_nodes)
     loss = criterion(out, y, w).cuda()
     loss.backward()
     optimizer.step()
+    
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
     pred_y[beg:end]  = out.data.cpu().numpy()
     true_y[beg:end]  = y.data.cpu().numpy()
     weights[beg:end] = w.data.cpu().numpy()
+    
     epoch_loss += loss.item()
     # Print running loss about 10 times during each epoch
     if (((i+1) % (len(train_loader)//10)) == 0):
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
-      #print("Summary: ", torch.cuda.memory_summary())
 
   tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, 'train', args.eval_tpr)
@@ -225,7 +225,6 @@ def main():
   # Setting default tensor type to cuda
   global device
   device = torch.device('cuda')
-
 
   criterion = nn.functional.binary_cross_entropy
   if not args.evaluate:

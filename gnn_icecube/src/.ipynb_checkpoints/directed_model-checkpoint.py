@@ -23,6 +23,7 @@ class GNN(nn.Module):
                            )
     rem_layers = [GNN_Layer(nb_hidden, nb_hidden) for _ in range(nb_layer-1)]
     self.layers = nn.ModuleList([first_layer]+rem_layers)
+    self.layers.cuda()
     # Initialize final readout layer
     self.readout_fc = nn.Linear(nb_hidden, 1)
     self.readout_norm = nn.InstanceNorm1d(1)
@@ -31,9 +32,7 @@ class GNN(nn.Module):
   def forward(self, emb, mask, batch_nb_nodes):
     batch_size, nb_pts, input_dim  = emb.size()
     # Create dummy first adjacency matrix
-    adj = Variable(torch.ones(batch_size, nb_pts, nb_pts))
-    if emb.is_cuda:
-      adj = adj.cuda()
+    adj = Variable(torch.ones(batch_size, nb_pts, nb_pts, device=torch.device('cuda')))
     # Run through layers
     for i, layer in enumerate(self.layers):
       emb, adj = layer(emb, adj, mask, batch_nb_nodes)
@@ -51,9 +50,9 @@ class GNN_Layer(nn.Module):
     self.kernel=kernel
     self.apply_norm=apply_norm
     # Create two graph convolution modules in case residual
-    self.convA = Graph_Convolution(input_dim, nb_hidden // 2)
-    self.convB = Graph_Convolution(input_dim, nb_hidden // 2)
-    self.act = nn.ReLU()
+    self.convA = Graph_Convolution(input_dim, nb_hidden // 2).cuda()
+    self.convB = Graph_Convolution(input_dim, nb_hidden // 2).cuda()
+    self.act = nn.ReLU().cuda()
     self.residual = residual
 
   def forward(self, emb, adj, mask, batch_nb_nodes):
@@ -100,11 +99,11 @@ class Gaussian(nn.Module):
   Can be initialized to only use a subset of features
   in the kernel (e.g. spatial coordinates).
   '''
-  def __init__(self, spatial_coords=None, temporal_coords=None):
+  def __init__(self, spatial_coords=None, time_coords=None):
     super(Gaussian, self).__init__()
     self.sigma = nn.Parameter(torch.rand(1) * 0.02 + 0.99)
     self.spatial_coords = spatial_coords
-    self.temporal_coords = temporal_coords
+    self.time_coords = time_coords
 
   def _apply_norm_and_mask(self, adj, mask):
     return adj * mask
@@ -116,14 +115,16 @@ class Gaussian(nn.Module):
       emb = emb_in[:,:,self.spatial_coords]
     else:
       emb = emb_in
+    
     # Calculate temporal direction between nodes
-    if self.temporal_coords is not None:
-      emb_time = emb_in[:,:,self.temporal_coords]
+    if self.time_coords is not None:
+      emb_time = emb_in[:,:,self.time_coords]
       emb_time = emb_time.unsqueeze(2).expand(batch, nb_pts, nb_pts)
       emb_time_t = emb_time.transpose(1,2)
-      dt = emb_time - emb_time.transpose(1,2)
+      dt = torch.sign(emb_time - emb_time.transpose(1,2))
     else:
       dt = torch.ones(batch, nb_pts, nb_pts)
+    
     # Expand and transpose coordinates
     emb = emb.unsqueeze(2).expand(batch, nb_pts, nb_pts, emb.size()[2])
     emb_t = emb.transpose(1,2)
