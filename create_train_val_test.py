@@ -104,9 +104,9 @@ def pickleList(fileList):
     data = [X_all,y_all,w_all,e_all,f_all,E_all]
 
     ####### Energy cuts
-    data = energy_cut(data, args.emin, args.emax)
+    #data = energy_cut(data, args.emin, args.emax)
     ####### Creating 50/50 sample
-    data = create_equal_samples(data)
+    #data = create_equal_samples(data)
 
     return data
 
@@ -117,6 +117,7 @@ assert nb_total <= len(total_file), "Not enough files to create samples."
 random.shuffle(total_file)
 
 if args.nb_train != 0:
+    print("Pickling training files...")
     split_ind = args.nb_train/args.nb_split
     for i in range(args.nb_split):
         train_file = total_file[int(i*split_ind):int((i+1)*split_ind)]
@@ -124,11 +125,13 @@ if args.nb_train != 0:
             pickle.dump(pickleList(train_file),f)
 
 if args.nb_val != 0:
+    print("Pickling validation files...")
     val_file = total_file[args.nb_train:nb_total-args.nb_test]
     with open(args.out + '/val_file.pkl',"wb") as f:
         pickle.dump(pickleList(val_file),f)
 
 if args.nb_test != 0:
+    print("Pickling test files...")
     test_file = total_file[nb_total-args.nb_test:nb_total]
     with open(args.out + '/test_file.pkl',"wb") as f:
         pickle.dump(pickleList(test_file),f)

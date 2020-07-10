@@ -48,8 +48,10 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
     Returns:
         observable_features: Observables dictionary
     """
-    
-    ice_pulses = dataclasses.I3RecoPulseSeriesMap.from_frame(frame,'SplitInIcePulses')
+    try:
+        ice_pulses = dataclasses.I3RecoPulseSeriesMap.from_frame(frame,'SplitInIcePulses')
+    except:
+        ice_pulses = dataclasses.I3RecoPulseSeriesMap.from_frame(frame,'InIceDSTPulses')
 
     #Look inside ice pulses and get stats on charges and time
     IC_strings = range(1,87)
@@ -169,9 +171,8 @@ def read_files(filename_list, geofile):
             except:
                 continue
             
-            if frame["I3EventHeader"].sub_event_stream != "InIceSplit":
+            if frame["I3EventHeader"].sub_event_stream != "InIceSplit" and frame["I3EventHeader"].sub_event_stream != "Final":
                 continue
-
             # ALWAYS USE EVENTS THAT PASSES CLEANING!
             #if use_cleaned_pulses:
 #             try:
@@ -180,7 +181,11 @@ def read_files(filename_list, geofile):
 #                 continue
 
             # GET TRUTH LABELS
-            nu = frame["I3MCTree_preMuonProp"][0] # x,y,z,ra,dec,time,energy,length
+            try:
+                event = frame["I3MCTree"]
+            except:
+                event = frame["I3MCTree_preMuonProp"] # x,y,z,ra,dec,time,energy,length
+            nu = event[0]
             
             if true_name:
                 nu_check = frame[true_name]
@@ -189,7 +194,7 @@ def read_files(filename_list, geofile):
             if (nu.type != dataclasses.I3Particle.NuMu and nu.type != dataclasses.I3Particle.NuMuBar\
                 and nu.type != dataclasses.I3Particle.NuE and nu.type != dataclasses.I3Particle.NuEBar\
                 and nu.type != dataclasses.I3Particle.NuTau and nu.type != dataclasses.I3Particle.NuTauBar):
-                print("PARTICLE IS NOT NEUTRU=INO!! Skipping event...")
+                print("PARTICLE IS NOT NEUTRINO!! Skipping event...")
                 continue           
  
             # All these are not necessary as of now
@@ -215,8 +220,8 @@ def read_files(filename_list, geofile):
             if ((nu.type == dataclasses.I3Particle.NuMu or nu.type == dataclasses.I3Particle.NuMuBar) and isCC):
                 isTrack = True
                 isCascade = False
-                if frame["I3MCTree_preMuonProp"][1].type == dataclasses.I3Particle.MuMinus or frame["I3MCTree_preMuonProp"][1].type == dataclasses.I3Particle.MuPlus:
-                    track_length = frame["I3MCTree_preMuonProp"][1].length
+                if event[1].type == dataclasses.I3Particle.MuMinus or event[1].type == dataclasses.I3Particle.MuPlus:
+                    track_length = event[1].length
                 else:
                     #print("Second particle in MCTree not muon for numu CC? Skipping event...")
                     continue
@@ -224,7 +229,7 @@ def read_files(filename_list, geofile):
                 isTrack = False
                 isCascade = True
                 track_length = 0
-        
+            
             #Save flavor and particle type (anti or not)
             if (nu.type == dataclasses.I3Particle.NuMu):
                 neutrino_type = 14

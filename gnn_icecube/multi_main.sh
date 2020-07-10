@@ -23,7 +23,8 @@ NB_TEST=100000
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-NAME="${DATE: -6}_20layers_128hu_5050"
+#NAME="${DATE: -6}_20layers_5050"
+NAME="070620_20layers_5050"
 RUN="$SLURM_ARRAY_TASK_ID"
 PROJECT="HPCC"
 
@@ -34,7 +35,7 @@ BATCH_SIZE=32
 
 # Network hyperparameters
 NB_LAYER=20
-NB_HIDDEN=128
+NB_HIDDEN=64
 
 # Modify parameters to fit multi-file submission
 NB_TRAIN=`expr ${NB_TRAIN} / ${NB_FILE}`

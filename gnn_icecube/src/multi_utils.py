@@ -40,7 +40,7 @@ def read_args():
 
   # Experiment
   add_arg('--name', help='Experiment reference name', required=True)
-  add_arg('--project', help='wandb projecet run name', default=0)
+  add_arg('--project', help='wandb project run name', default=0)
   add_arg('--run', help='Experiment run number', default=0)
   add_arg('--eval_tpr',help='FPR at which TPR will be evaluated', default=0.000003)
   add_arg('--evaluate', help='Perform evaluation on test set only',action='store_true')
@@ -253,7 +253,7 @@ def update_best_plots(experiment_dir):
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
     
-def plot_pred_hist(true_y, pred_y, experiment_dir):
+def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
   '''
   Plot and save prediction histogram.
   '''
@@ -266,28 +266,31 @@ def plot_pred_hist(true_y, pred_y, experiment_dir):
   # Style
   plt.xlabel("Probability")
   plt.ylabel("Counts")
+  plt.title(plot_name)
   plt.legend()
   #Save
   plotfile = os.path.join(experiment_dir, 'pred_hist.png')
   plt.savefig(plotfile)
   plt.clf()
  
-def plot_confusion(true_y, pred_y, experiment_dir, normalize=None, labels=None):
+def plot_confusion(true_y, pred_y, experiment_dir, plot_name, normalize=None, labels=None):
   '''
   Plot and save confusion matrices.
   '''
-  conf_matrix = confusion_matrix(true_y, pred_y, normalize=normalize)
+  conf_matrix = confusion_matrix(true_y, pred_y, normalize=normalize).transpose()
   # Plot
   plt.clf()
   cmap = 'Blues'
   plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
+  for (j,i),label in np.ndenumerate(conf_matrix):
+    plt.text(i,j,label,ha='center',va='center')
   # Style
   ticks = np.arange(conf_matrix.shape[0])
   plt.xticks(ticks, labels)
   plt.yticks(ticks, labels)
-  plt.xlabel("Predicted label")
-  plt.ylabel("True label")
-  plt.title("Normalized on "+str(normalize))
+  plt.ylabel("Predicted label")
+  plt.xlabel("True label")
+  plt.title("Normalized on "+str(normalize)+"\n"+plot_name)
   plt.colorbar()
   #Save
   plotfile = os.path.join(experiment_dir, 'conf_'+str(normalize)+'.png')
