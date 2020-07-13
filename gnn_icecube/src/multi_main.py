@@ -176,11 +176,10 @@ def evaluate(net,
 
     if plot_name == TEST_NAME:
         labels = ['Cascade','Track']
-        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, args.name, normalize='true', labels=labels)
-        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, args.name, normalize='pred', labels=labels)
+        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, args.name, labels=labels)
         utils.plot_pred_hist(true_y, pred_y, experiment_dir, args.name)
         utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
-        utils.save_preds(evt_id, f_name, pred_y, experiment_dir)
+        utils.save_preds(evt_id, f_name, pred_y, true_y, experiment_dir)
     return (tpr, roc, epoch_loss, acc_score)
 
 
