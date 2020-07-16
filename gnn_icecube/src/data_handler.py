@@ -53,8 +53,6 @@ def pad_batch(X):
 class IceCube_Dataset(Dataset):
     def __init__(self, data_path, nb_samples):
         with open(data_path, 'rb') as f:
-# add energy
-
             X, y, weights, event_id, filenames, energy = pickle.load(f)
         self.X = X[:nb_samples]
         self.y = y[:nb_samples]
@@ -63,7 +61,7 @@ class IceCube_Dataset(Dataset):
         self.f = filenames[:nb_samples]
 
     def __getitem__(self, index):
-        X_i = self.X[index][:,:6] # leave out nstring
+        X_i = self.X[index] # leave out nstring
         y_i = self.y[index]
         w_i = self.w[index]
         e_i = self.e[index]

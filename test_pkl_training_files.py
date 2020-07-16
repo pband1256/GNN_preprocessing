@@ -112,6 +112,8 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
         array_IC[dom_index,4] = numpy.sum(chargelist)
         # Trigger time of first pulse
         array_IC[dom_index,5] = time_array[0]
+        # Trigger time of last pulse - first pulse (for BG v. signal)
+        array_IC[dom_index,6] = time_array[-1]-time_array[0]
     array_IC = numpy.asarray(array_IC)
     
     # Check that pulse features are nonzero
@@ -259,20 +261,15 @@ def read_files(filename_list, geofile):
                 print("Do not know first particle type in MCTree, should be neutrino, skipping this event")
                 continue
             
-            # Only look at "high energy" events for tracks for now
-            #if nu_energy < emin and isTrack:
-            #    continue
-            
             IC_array = get_observable_features(frame,StringLocations)
 
             # regression variables
             # OUTPUT: [ nu energy, nu zenith, nu azimuth, nu time, nu x, nu y, nu z, track length (0 for cascade), isTrack, flavor, type (anti = 1), isCC]
-            
-#             output_labels.append( numpy.array([ float(nu_energy), float(nu_zenith), float(nu_azimuth), float(nu_time), float(nu_x), float(nu_y), float(nu_z), float(track_length), float(isTrack), float(neutrino_type), float(particle_type), float(isCC) ]) )
+            # output_labels.append( numpy.array([ float(nu_energy), float(nu_zenith), float(nu_azimuth), float(nu_time), float(nu_x), float(nu_y), float(nu_z), float(track_length), float(isTrack), float(neutrino_type), float(particle_type), float(isCC) ]) )
 
             
             output_labels.append(float(isTrack)) # label y
-            output_features_IC.append(IC_array) # feature X, but x,y,z=string,DOM,DOM_index as of now
+            output_features_IC.append(IC_array) # feature X
             output_weights.append(frame['I3MCWeightDict']['OneWeight'])
             output_event_id.append(frame["I3EventHeader"].event_id)
             output_filename.append(event_file_name)
