@@ -10,6 +10,7 @@ from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score, confusion_
 
 import matplotlib; matplotlib.use('Agg') # no display on clusters
 import matplotlib.pyplot as plt
+import matplotlib.colors
 
 import torch
 from torch.autograd import Variable
@@ -264,9 +265,9 @@ def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
   plt.hist(pos, bins=20, label='Track', alpha=0.5)
   plt.hist(neg, bins=20, label='Cascade', alpha=0.5)
   # Style
-  plt.xlabel("Probability")
+  plt.xlabel("Sigmoid output")
   plt.ylabel("Counts")
-  plt.title(plot_name)
+  plt.title("Normalized GNN output\n"+plot_name)
   plt.legend()
   #Save
   plotfile = os.path.join(experiment_dir, 'pred_hist.png')
@@ -277,11 +278,13 @@ def plot_confusion(true_y, pred_y, experiment_dir, plot_name, labels=None):
   '''
   Plot and save confusion matrices.
   '''
-  conf_matrix_pred = confusion_matrix(true_y, pred_y, normalize='true').transpose()
-  conf_matrix_true = confusion_matrix(true_y, pred_y, normalize='pred').transpose()
+  conf_matrix_pred = confusion_matrix(true_y, pred_y, normalize='pred').transpose()
+  conf_matrix_true = confusion_matrix(true_y, pred_y, normalize='true').transpose()
   # Plot
   plt.clf()
   cmap = 'Blues'
+  colors = ["#FFCCFF", "#F1DAFF", "#E3E8FF", "#CCFFFF"]
+  cmap = matplotlib.colors.ListedColormap(colors)
   fig, axes = plt.subplots(figsize=(12,7), nrows=1, ncols=2)
   im = axes[0].imshow(conf_matrix_pred, interpolation='nearest', cmap=cmap)
   axes[0].set_title("Normalized on prediction")
@@ -304,13 +307,13 @@ def plot_confusion(true_y, pred_y, experiment_dir, plot_name, labels=None):
     ax.set_yticklabels(labels, rotation=90, verticalalignment='center')
   fig.suptitle("Confusion matrices\n"+plot_name, size='x-large', linespacing = 1.5)
   fig.subplots_adjust(right=0.8, top=1.02)
-  cbar_ax = fig.add_axes([0.84, 0.31, 0.02, 0.53])
+  cbar_ax = fig.add_axes([0.84, 0.308, 0.02, 0.528])
   fig.colorbar(im, cax=cbar_ax)
 
   #Save
   plotfile = os.path.join(experiment_dir, 'conf_matrix.png')
   plt.savefig(plotfile)
-  plt.clf()
+  plt.close(fig)
      
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
   '''

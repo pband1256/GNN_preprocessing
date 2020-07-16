@@ -13,7 +13,7 @@
 # Dataset
 TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/nocuts_multi_5050/train_file* )
 VALFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi_5050/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/diffuse_final/test_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/processed/nocuts_multi_5050/test_file.pkl'
 
 NB_FILE=10
 NB_TRAIN=1000000
@@ -23,19 +23,17 @@ NB_TEST=100000
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-#NAME="${DATE: -6}_directed_5050"
-#RUN="$SLURM_ARRAY_TASK_ID"
-NAME="071320_diffuse_final"
-RUN="2"
+NAME="${DATE: -6}_6layers_5050"
+RUN="$SLURM_ARRAY_TASK_ID"
 PROJECT="HPCC"
 
-PATIENCE=30
+PATIENCE=200
 NB_EPOCH=150
 LRATE=0.05
 BATCH_SIZE=32
 
 # Network hyperparameters
-NB_LAYER=10
+NB_LAYER=6
 NB_HIDDEN=64
 
 # Modify parameters to fit multi-file submission
@@ -45,7 +43,7 @@ NB_EPOCH=`expr ${NB_EPOCH} \* ${NB_FILE}`
 TRAINFILE_SLICED=${TRAINFILE[@]:0:${NB_FILE}}
 
 # Entering arguments
-PYARGS="--name $NAME --run $RUN --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN --evaluate"
+PYARGS="--name $NAME --run $RUN --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN"
 
 echo -e "\nStarting experiment with name $NAME...\n"
 
