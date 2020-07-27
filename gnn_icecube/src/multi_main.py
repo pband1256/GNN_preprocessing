@@ -184,7 +184,7 @@ def evaluate(net,
 
 
 def main():
-  input_dim=6
+  input_dim=7
   spatial_dims=[0,1,2]
   args = utils.read_args()
 

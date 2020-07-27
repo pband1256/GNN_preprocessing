@@ -106,7 +106,7 @@ def pickleList(fileList):
     ####### Energy cuts
     #data = energy_cut(data, args.emin, args.emax)
     ####### Creating 50/50 sample
-    #data = create_equal_samples(data)
+    data = create_equal_samples(data)
 
     return data
 

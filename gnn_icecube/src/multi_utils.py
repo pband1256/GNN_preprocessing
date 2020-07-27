@@ -283,8 +283,8 @@ def plot_confusion(true_y, pred_y, experiment_dir, plot_name, labels=None):
   # Plot
   plt.clf()
   cmap = 'Blues'
-  colors = ["#FFCCFF", "#F1DAFF", "#E3E8FF", "#CCFFFF"]
-  cmap = matplotlib.colors.ListedColormap(colors)
+  #colors = ["#FFCCFF", "#F1DAFF", "#E3E8FF", "#CCFFFF"]
+  #cmap = matplotlib.colors.ListedColormap(colors)
   fig, axes = plt.subplots(figsize=(12,7), nrows=1, ncols=2)
   im = axes[0].imshow(conf_matrix_pred, interpolation='nearest', cmap=cmap)
   axes[0].set_title("Normalized on prediction")
