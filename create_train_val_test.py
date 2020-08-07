@@ -113,6 +113,7 @@ def pickleList(fileList):
 # Shuffling ALL files in folder to make sure there's no systematic problem. Probably overkill.
 nb_total = args.nb_train + args.nb_val + args.nb_test
 total_file = glob.glob(args.inp + '/*.pkl')
+print(nb_total, len(total_file))
 assert nb_total <= len(total_file), "Not enough files to create samples."
 random.shuffle(total_file)
 

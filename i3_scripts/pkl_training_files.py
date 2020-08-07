@@ -1,3 +1,6 @@
+#!/bin/sh /cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/icetray-start
+#METAPROJECT: combo/V00-00-03
+
 #############################
 # Read IceCube files and create training file (pickle)
 #   Modified from code written by Claudio Kopper and Jessie Micallef
@@ -33,7 +36,7 @@ parser.add_argument("-o", "--output",type=str,
                     dest="output_name",help="path and name for output file")
 parser.add_argument("-g", "--gcdfile",type=str,default="/mnt/research/IceCube/gcd_file/GeoCalibDetectorStatus_AVG_55697-57531_PASS2_SPE_withScaledNoise.i3.gz",dest='gcdfile',help="path for GCD file")
 parser.add_argument("--true_name",type=str,default=None,
-                    dest="true_name", help="Name of key for true particle info if you want to check with I3MCTree_preMuonProp[0]")
+                    dest="true_name", help="Name of key for true particle info if you want to check with I3MCTree[0]")
 
 args = parser.parse_args()
 input_file = args.input_file
@@ -61,85 +64,6 @@ def GetStringLocations(gcdfile):
 def GetCoords(string, dom, StringLocations):
     return StringLocations[1][StringLocations[0].tolist().index((string,dom))]
 
-def IC_hit_filter(p_frame, gcdfile=None, surface=None):
-    # Return flag to filter out p_frames with IC_hit == False
-    def has_signature(p, surface):
-        # calculates if the particle is in or near the detector
-        # if this is the case it further states weather the event is starting,
-        # stopping or through-going
-        intersections = surface.intersection(p.pos, p.dir)
-        if p.is_neutrino:
-            return -1
-        if not np.isfinite(intersections.first):
-            return -1
-        if p.is_cascade:
-            if intersections.first <= 0 and intersections.second > 0:
-                return 0  # starting event
-            else:
-                return -1 # no hits
-        elif p.is_track:
-            if intersections.first <= 0 and intersections.second > 0:
-                return 0  # starting event
-            elif intersections.first > 0 and intersections.second > 0:
-                if p.length <= intersections.first:
-                    return -1  # no hit
-                elif p.length > intersections.second:
-                    return 1  # through-going event
-                else:
-                    return 2  # stopping event
-            else:
-                return -1
-
-    def is_data(frame):
-        if ('I3MCWeightDict' in frame) or ('CorsikaWeightMap' in frame) or ('MCPrimary' in frame) or ('I3MCTree' in frame) or ('I3MCTree_preMuonProp' in frame):
-            return False
-        else:
-            return True
-
-    def crawl_neutrinos(p, I3Tree, level=0, plist = []):
-        if len(plist) < level+1:
-            plist.append([])
-        if (p.is_neutrino) & np.isfinite(p.length):
-            plist[level].append(p) 
-        children = I3Tree.children(p)
-        if len(children) < 10:
-            for child in children:
-                crawl_neutrinos(child, I3Tree, level=level+1, plist=plist)
-        return plist
-
-    def find_all_neutrinos(p_frame):
-        nu_pdg = [12, 14, 16, -12, -14, -16]
-        if is_data(p_frame):
-            return True
-        try:
-            I3Tree = p_frame["I3MCTree"]
-        except:
-            I3Tree = p_frame["I3MCTree_preMuonProp"]
-        # find first neutrino as seed for find_particle
-        for p in I3Tree.get_primaries():
-            if p.pdg_encoding in nu_pdg:
-                break
-        all_nu = [i for i in crawl_neutrinos(p, I3Tree, plist=[]) if len(i) > 0]
-        return all_nu[-1][0]
-
-    # Check if p-frame
-    if is_data(p_frame):
-        return True
-    if surface is None:
-        if gcdfile is None:
-            surface = icecube.MuonGun.ExtrudedPolygon.from_I3Geometry(p_frame['I3Geometry'])
-        else:
-            surface = icecube.MuonGun.ExtrudedPolygon.from_file(gcdfile, padding=0)
-    try:
-        I3Tree = p_frame["I3MCTree"]
-    except:
-        I3Tree = p_frame["I3MCTree_preMuonProp"]
-    neutrino = find_all_neutrinos(p_frame)
-    children = I3Tree.children(neutrino)
-    IC_hit = np.any([((has_signature(tp, surface) != -1) & np.isfinite(tp.length)) for tp in children])
-    return IC_hit
-
-
 def get_observable_features(frame,StringLocations,low_window=-500,high_window=20000):
     """
     Load observable features from IceCube files
@@ -155,10 +79,9 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
 
     #Look inside ice pulses and get stats on charges and time
     IC_strings = range(1,87)
-    ICstrings = len(IC_strings)
 
     #Six summary variables: DOM x,y,z positions, sum first pulse, sum charges, time first pulse, 
-    array_IC = np.zeros([ICstrings*60,7]) # 86 strings, 60 DOMs each, [string, dom_index, position/charge & time summary]
+    array_IC = np.zeros([len(IC_strings)*60,7]) # 86 strings, 60 DOMs each, [string, dom_index, position/charge & time summary]
 
     # Check if shifting trigger time is necessary
 
@@ -203,7 +126,7 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
         coords = GetCoords(string_index,dom_val,StringLocations)
         # Charge weighted mean and stdev
         weighted_avg_time = np.average(time_array,weights=charge_array)
-        weighted_std_time = np.sqrt( np.average((time_array - weighted_avg_time)**2, weights=charge_array) )
+        weighted_std_time = np.sqrt(np.average((time_array - weighted_avg_time)**2, weights=charge_array))
 
         # Cartesian coordinates
         array_IC[dom_index,0] = coords[0]
@@ -214,7 +137,7 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
         # Sum of charge of all pulses
         array_IC[dom_index,4] = np.sum(chargelist)
         # Trigger time of first pulse
-        #array_IC[dom_index,5] = time_array[0]
+        # array_IC[dom_index,5] = time_array[0]
         # Charge weighted time mean
         array_IC[dom_index,5] = weighted_avg_time
         # Charge weighted time stdev
@@ -264,8 +187,14 @@ def read_files(filename_list, gcdfile):
             except:
                 continue
 
-            if not IC_hit_filter(p_frame, gcdfile=gcdfile):
+            if frame["classification"] in [0,11]:
                 print("Particle does not interact within the detector volume.")
+                continue
+
+            try:
+                mu_energy = frame["mu_E_deposited"].value
+            except:
+                print("No clear muon found.")
                 continue
             
             if frame["I3EventHeader"].sub_event_stream != "InIceSplit" and frame["I3EventHeader"].sub_event_stream != "Final":
@@ -283,10 +212,6 @@ def read_files(filename_list, gcdfile):
             except:
                 event = frame["I3MCTree_preMuonProp"] # x,y,z,ra,dec,time,energy,length
             nu = event[0]
-            
-            if true_name:
-                nu_check = frame[true_name]
-                assert nu==nu_check,"CHECK I3MCTree_preMuonProp[0], DOES NOT MATCH TRUTH IN GIVEN KEY"
             
             if (nu.type != dataclasses.I3Particle.NuMu and nu.type != dataclasses.I3Particle.NuMuBar\
                 and nu.type != dataclasses.I3Particle.NuE and nu.type != dataclasses.I3Particle.NuEBar\
@@ -350,10 +275,6 @@ def read_files(filename_list, gcdfile):
                 print("Do not know first particle type in MCTree, should be neutrino, skipping this event")
                 continue
             
-            # Only look at "high energy" events for tracks for now
-            #if nu_energy < emin and isTrack:
-            #    continue
-            
             IC_array = get_observable_features(frame,StringLocations)
 
             # regression variables
@@ -367,7 +288,7 @@ def read_files(filename_list, gcdfile):
             output_weights.append(frame['I3MCWeightDict']['OneWeight'])
             output_event_id.append(frame["I3EventHeader"].event_id)
             output_filename.append(event_file_name)
-            output_energy.append(nu_energy)    
+            output_energy.append(mu_energy)    
 
         print("Got rid of %i events classified as other so far"%isOther_count)
 
