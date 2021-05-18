@@ -168,7 +168,7 @@ def evaluate(net,
     epoch_loss /= nb_eval # Normalize loss
     tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
                                       experiment_dir, plot_name, args.eval_tpr)
-    threshold = 0.7
+    threshold = 0.5
     pred_y_rounded = (pred_y - threshold + 0.5).round()
     acc_score = accuracy_score(true_y, pred_y_rounded, sample_weight=weights)
     logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e} -- Acc {:>.3e}".format(

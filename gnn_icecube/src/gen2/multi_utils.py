@@ -10,11 +10,12 @@ from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score, confusion_
 
 import matplotlib; matplotlib.use('Agg') # no display on clusters
 import matplotlib.pyplot as plt
+import matplotlib.colors
 
 import torch
 from torch.autograd import Variable
 
-import directed_model as model
+import model
 
 #####################
 #     CONSTANTS     #
@@ -40,6 +41,7 @@ def read_args():
 
   # Experiment
   add_arg('--name', help='Experiment reference name', required=True)
+  add_arg('--project', help='wandb project run name', default=0)
   add_arg('--run', help='Experiment run number', default=0)
   add_arg('--eval_tpr',help='FPR at which TPR will be evaluated', default=0.000003)
   add_arg('--evaluate', help='Perform evaluation on test set only',action='store_true')
@@ -103,7 +105,7 @@ def initialize_experiment(experiment_dir):
   csv_path = os.path.join(experiment_dir, STATS_CSV)
   with open(csv_path, 'w') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['Epoch', 'lrate', 'train_tpr', 'train_roc', 'train_loss', 'val_tpr', 'val_roc', 'val_loss', 'running_loss'])
+    writer.writerow(['Epoch', 'lrate', 'train_tpr', 'train_roc', 'train_loss', 'val_tpr', 'val_roc', 'val_loss', 'val_acc', 'running_loss'])
 
 
 ###########################
@@ -114,8 +116,7 @@ def create_or_restore_model(
                             nb_hidden,
                             nb_layer,
                             input_dim,
-                            spat_dims,
-                            temp_dims
+                            spat_dims
                             ):
   '''
   Checks if model exists and creates it if not.
@@ -128,7 +129,7 @@ def create_or_restore_model(
     logging.warning("Model restored.")
   else:
     logging.warning("Creating new model:")
-    m = model.GNN(nb_hidden, nb_layer, input_dim, spat_dims, temp_dims)
+    m = model.GNN(nb_hidden, nb_layer, input_dim, spat_dims)
     logging.info(m)
     save_model(m, model_file)
     logging.warning("Initial model saved.")
@@ -252,7 +253,7 @@ def update_best_plots(experiment_dir):
       old_name = os.path.join(experiment_dir, f)
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
-      
+    
 def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
   '''
   Plot and save prediction histogram.
@@ -264,39 +265,56 @@ def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
   plt.hist(pos, bins=20, label='Track', alpha=0.5)
   plt.hist(neg, bins=20, label='Cascade', alpha=0.5)
   # Style
-  plt.xlabel("Probability")
+  plt.xlabel("Sigmoid output")
   plt.ylabel("Counts")
-  plt.title(plot_name)
+  plt.title("Normalized GNN output\n"+plot_name)
   plt.legend()
   #Save
-  plotfile = os.path.join(experiment_dir, 'pred_hist.png')
+  plotfile = os.path.join(experiment_dir, 'test_hist.png')
   plt.savefig(plotfile)
   plt.clf()
  
-def plot_confusion(true_y, pred_y, experiment_dir, plot_name, normalize=None, labels=None):
+def plot_confusion(true_y, pred_y, experiment_dir, plot_name, labels=None):
   '''
   Plot and save confusion matrices.
   '''
-  conf_matrix = confusion_matrix(true_y, pred_y, normalize=normalize).transpose()
+  conf_matrix_pred = confusion_matrix(true_y, pred_y, normalize='pred').transpose()
+  conf_matrix_true = confusion_matrix(true_y, pred_y, normalize='true').transpose()
   # Plot
   plt.clf()
   cmap = 'Blues'
-  plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
-  for (j,i),label in np.ndenumerate(conf_matrix):
-    plt.text(i,j,label,ha='center',va='center')
+  #colors = ["#FFCCFF", "#F1DAFF", "#E3E8FF", "#CCFFFF"]
+  #cmap = matplotlib.colors.ListedColormap(colors)
+  fig, axes = plt.subplots(figsize=(12,7), nrows=1, ncols=2)
+  im = axes[0].imshow(conf_matrix_pred, interpolation='nearest', cmap=cmap)
+  axes[0].set_title("Normalized on prediction")
+  for (j,i),label in np.ndenumerate(conf_matrix_pred):
+    axes[0].text(i,j,"{:>.3}".format(label),ha='center',va='center')
+    
+  im = axes[1].imshow(conf_matrix_true, interpolation='nearest', cmap=cmap)
+  axes[1].set_title("Normalized on truth")
+  for (j,i),label in np.ndenumerate(conf_matrix_true):
+    axes[1].text(i,j,"{:>.3}".format(label),ha='center',va='center')
+    
   # Style
-  ticks = np.arange(conf_matrix.shape[0])
-  plt.xticks(ticks, labels)
-  plt.yticks(ticks, labels)
-  plt.ylabel("Predicted label")
-  plt.xlabel("True label")
-  plt.title("Normalized on "+str(normalize)+"\n"+plot_name)
-  plt.colorbar()
+  ticks = np.arange(conf_matrix_pred.shape[0])
+  for ax in axes.flat:
+    ax.set_ylabel("Predicted label")
+    ax.set_xlabel("True label")
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(labels)
+    ax.set_yticks(ticks)
+    ax.set_yticklabels(labels, rotation=90, verticalalignment='center')
+  fig.suptitle("Confusion matrices\n"+plot_name, size='x-large', linespacing = 1.5)
+  fig.subplots_adjust(right=0.8, top=1.02)
+  cbar_ax = fig.add_axes([0.84, 0.308, 0.02, 0.528])
+  fig.colorbar(im, cax=cbar_ax)
+
   #Save
-  plotfile = os.path.join(experiment_dir, 'conf_'+str(normalize)+'.png')
+  plotfile = os.path.join(experiment_dir, 'conf_matrix.png')
   plt.savefig(plotfile)
-  plt.clf()
-        
+  plt.close(fig)
+     
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
   '''
   Write loss, fpr, roc_auc information to .csv file in model directory.
@@ -306,16 +324,16 @@ def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experime
     writer = csv.writer(csvfile)
     writer.writerow((epoch, lrate)+train_stats+val_stats+(train_loss,))
 
-def save_preds(evt_id, f_name, pred_y, experiment_dir):
+def save_preds(evt_id, f_name, pred_y, true_y, experiment_dir):
   '''
   Save predicted outputs for predicted event id, filename.
   '''
   pred_file = os.path.join(experiment_dir, 'preds.csv')
-  with open(pred_file, 'x') as csvfile:
+  with open(pred_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['event_id', 'filename', 'prediction'])
-    for e, f, y in zip(evt_id, f_name, pred_y):
-      writer.writerow((e, f, y))
+    writer.writerow(['event_id', 'filename', 'prediction', 'truth'])
+    for e, f, y_p, y_t in zip(evt_id, f_name, pred_y, true_y):
+      writer.writerow((e, f, y_p, y_t))
 
 def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
   test_scores = {'nb_eval':nb_eval,
@@ -324,7 +342,7 @@ def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
                  'roc auc':float(roc),
                  'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
-  with open(pred_file, 'x') as f:
+  with open(pred_file, 'w') as f:
     yaml.dump(test_scores, f, default_flow_style=False)
 
 def save_best_scores(epoch, epoch_loss, tpr, roc, acc, experiment_dir):

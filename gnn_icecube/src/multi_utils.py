@@ -270,7 +270,7 @@ def plot_pred_hist(true_y, pred_y, experiment_dir, plot_name):
   plt.title("Normalized GNN output\n"+plot_name)
   plt.legend()
   #Save
-  plotfile = os.path.join(experiment_dir, 'pred_hist.png')
+  plotfile = os.path.join(experiment_dir, 'test_hist.png')
   plt.savefig(plotfile)
   plt.clf()
  
@@ -329,7 +329,7 @@ def save_preds(evt_id, f_name, pred_y, true_y, experiment_dir):
   Save predicted outputs for predicted event id, filename.
   '''
   pred_file = os.path.join(experiment_dir, 'preds.csv')
-  with open(pred_file, 'x') as csvfile:
+  with open(pred_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['event_id', 'filename', 'prediction', 'truth'])
     for e, f, y_p, y_t in zip(evt_id, f_name, pred_y, true_y):
@@ -342,7 +342,7 @@ def save_test_scores(nb_eval, epoch_loss, tpr, roc, acc, experiment_dir):
                  'roc auc':float(roc),
                  'accuracy':float(acc)}
   pred_file = os.path.join(experiment_dir, 'test_scores.yml')
-  with open(pred_file, 'x') as f:
+  with open(pred_file, 'w') as f:
     yaml.dump(test_scores, f, default_flow_style=False)
 
 def save_best_scores(epoch, epoch_loss, tpr, roc, acc, experiment_dir):

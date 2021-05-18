@@ -35,14 +35,11 @@ parser.add_argument("-i", "--input",type=str,
 parser.add_argument("-o", "--output",type=str,
                     dest="output_name",help="path and name for output file")
 parser.add_argument("-g", "--gcdfile",type=str,default="/mnt/research/IceCube/gcd_file/GeoCalibDetectorStatus_AVG_55697-57531_PASS2_SPE_withScaledNoise.i3.gz",dest='gcdfile',help="path for GCD file")
-parser.add_argument("--true_name",type=str,default=None,
-                    dest="true_name", help="Name of key for true particle info if you want to check with I3MCTree[0]")
 
 args = parser.parse_args()
 input_file = args.input_file
 output_name = args.output_name
 gcdfile = dataio.I3File(args.gcdfile)
-true_name = args.true_name
 
 def GetStringLocations(gcdfile):
     frame = gcdfile.pop_frame() # pop I frame
@@ -55,11 +52,12 @@ def GetStringLocations(gcdfile):
         dom = geometry.omgeo[omkey]
         string = omkey.string
         dom_id = omkey.om
+        #pmt_id = omkey.pmt
 
         # Pull coordinates for ALL DOMs
         StringLocationList.append((dom.position.x,dom.position.y,dom.position.z))
-        OMKeyList.append((string,dom_id)) # goes from 1 to 86*60
-    return np.array([OMKeyList, StringLocationList]) # size = [2,86*60]
+        OMKeyList.append((string,dom_id)) # goes from 1-86*60+122*80
+    return np.array([OMKeyList, StringLocationList]) # size = [2,86*60+122*80]
 
 def GetCoords(string, dom, StringLocations):
     return StringLocations[1][StringLocations[0].tolist().index((string,dom))]
@@ -78,10 +76,10 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
         ice_pulses = dataclasses.I3RecoPulseSeriesMap.from_frame(frame,'InIceDSTPulses')
 
     #Look inside ice pulses and get stats on charges and time
-    IC_strings = range(1,87)
-
+    IC_strings = 86
+    G2_strings = 122
+    array_IC = np.zeros([IC_strings*60+G2_strings*80,7]) # 86 strings, 60 DOMs each, [string, dom_index, position/charge & time summary]
     #Six summary variables: DOM x,y,z positions, sum first pulse, sum charges, time first pulse, 
-    array_IC = np.zeros([len(IC_strings)*60,7]) # 86 strings, 60 DOMs each, [string, dom_index, position/charge & time summary]
 
     # Check if shifting trigger time is necessary
 
@@ -89,7 +87,10 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
     for omkey, pulselist in ice_pulses:
         dom_val = omkey.om          # indexed from 1 to 60
         string_index = omkey.string # indexed from 1 to 86
-        dom_index = (string_index-1)*60 + (dom_val-1) # indexed from 0 to 85*60+59
+        if string_index > 1000:
+            dom_index = 86*60 + (string_index%1000-1)*80+(dom_val-1)
+        else:
+            dom_index = (string_index-1)*60+(dom_val-1) # indexed from 0 to 85*60+59
         timelist = []
         chargelist = []
 
@@ -168,14 +169,13 @@ def read_files(filename_list, gcdfile):
     """
     output_features_IC = []
     output_labels = []
-    output_weights = []
     output_event_id = []
     output_filename = []
     output_energy = []
     output_num_pulses_per_dom = []
-    isOther_count = 0  # check if not NC/CC
     
     StringLocations = GetStringLocations(gcdfile)
+    print(np.shape(StringLocations))
 
     for event_file_name in filename_list:
         print("reading file: {}".format(event_file_name))
@@ -197,16 +197,10 @@ def read_files(filename_list, gcdfile):
             try:
                 mu_energy = frame["mu_E_deposited"].value
             except:
-                print("No clear muon found.")
+                print("No muon energy found.")
  
-            if frame["I3EventHeader"].sub_event_stream != "InIceSplit" and frame["I3EventHeader"].sub_event_stream != "Final":
-                continue
-            # ALWAYS USE EVENTS THAT PASSES CLEANING!
-            #if use_cleaned_pulses:
-#             try:
-#                 cleaned = frame["SRTTWOfflinePulsesDC"]
-#             except:
-#                 continue
+            #if frame["I3EventHeader"].sub_event_stream != "InIceSplit" and frame["I3EventHeader"].sub_event_stream != "Final":
+            #    continue
 
             # GET TRUTH LABELS
             try:
@@ -215,12 +209,6 @@ def read_files(filename_list, gcdfile):
                 event = frame["I3MCTree_preMuonProp"] # x,y,z,ra,dec,time,energy,length
             nu = event[0]
             
-            if (nu.type != dataclasses.I3Particle.NuMu and nu.type != dataclasses.I3Particle.NuMuBar\
-                and nu.type != dataclasses.I3Particle.NuE and nu.type != dataclasses.I3Particle.NuEBar\
-                and nu.type != dataclasses.I3Particle.NuTau and nu.type != dataclasses.I3Particle.NuTauBar):
-                print("Particle is not neutrino.")
-                continue           
- 
             # All these are not necessary as of now
             nu_x = nu.pos.x
             nu_y = nu.pos.y
@@ -229,65 +217,22 @@ def read_files(filename_list, gcdfile):
             nu_azimuth = nu.dir.azimuth
             nu_energy = nu.energy
             nu_time = nu.time
-            isCC = frame['I3MCWeightDict']['InteractionType']==1.
-            isNC = frame['I3MCWeightDict']['InteractionType']==2.
-            isOther = not isCC and not isNC
 
+            # Classification flag here
+            num_label = 6
+            label_zenith = np.rad2deg(nu_zenith)
+            label = np.zeros(num_label)
 
-            # input file sanity check: this should not print anything since "isOther" should always be false
-            if isOther:
-                print("isOTHER - not Track or Cascade...skipping event...")
-                isOther_count += 1
-                continue
-            
-            # set track classification for numu CC only
-            if ((nu.type == dataclasses.I3Particle.NuMu or nu.type == dataclasses.I3Particle.NuMuBar) and isCC):
-                isTrack = True
-                isCascade = False
-                if event[1].type == dataclasses.I3Particle.MuMinus or event[1].type == dataclasses.I3Particle.MuPlus:
-                    track_length = event[1].length
-                else:
-                    #print("Second particle in MCTree not muon for numu CC? Skipping event...")
-                    continue
-            else:
-                isTrack = False
-                isCascade = True
-                track_length = 0
-            
-            #Save flavor and particle type (anti or not)
-            if (nu.type == dataclasses.I3Particle.NuMu):
-                neutrino_type = 14
-                particle_type = 0 #particle
-            elif (nu.type == dataclasses.I3Particle.NuMuBar):
-                neutrino_type = 14
-                particle_type = 1 #antiparticle
-            elif (nu.type == dataclasses.I3Particle.NuE):
-                neutrino_type = 12
-                particle_type = 0 #particle
-            elif (nu.type == dataclasses.I3Particle.NuEBar):
-                neutrino_type = 12
-                particle_type = 1 #antiparticle
-            elif (nu.type == dataclasses.I3Particle.NuTau):
-                neutrino_type = 16
-                particle_type = 0 #particle
-            elif (nu.type == dataclasses.I3Particle.NuTauBar):
-                neutrino_type = 16
-                particle_type = 1 #antiparticle
-            else:
-                print("Do not know first particle type in MCTree, should be neutrino, skipping this event")
-                continue
+            for i in range(num_label):
+               threshold = i*(180/num_label)
+               if label_zenith <= threshold:
+                   label[i] = 1
+                   break
             
             IC_array = get_observable_features(frame,StringLocations)
 
-            # regression variables
-            # OUTPUT: [ nu energy, nu zenith, nu azimuth, nu time, nu x, nu y, nu z, track length (0 for cascade), isTrack, flavor, type (anti = 1), isCC]
-            
-#             output_labels.append( np.array([ float(nu_energy), float(nu_zenith), float(nu_azimuth), float(nu_time), float(nu_x), float(nu_y), float(nu_z), float(track_length), float(isTrack), float(neutrino_type), float(particle_type), float(isCC) ]) )
-
-            
-            output_labels.append(float(isTrack)) # label y
+            output_labels.append(label) # multiclass label y
             output_features_IC.append(IC_array) # feature X, but x,y,z=string,DOM,DOM_index as of now
-            output_weights.append(frame['I3MCWeightDict']['OneWeight'])
             output_event_id.append(frame["I3EventHeader"].event_id)
             output_filename.append(event_file_name)
             try:             
@@ -295,14 +240,12 @@ def read_files(filename_list, gcdfile):
             except:
                 output_energy.append(nu_energy)    
 
-        print("Got rid of %i events classified as other so far"%isOther_count)
-
         # close the input file once we are done
         del event_file
 
     X = np.asarray(output_features_IC)
     y = np.asarray(output_labels)
-    weights = np.asarray(output_weights)
+    weights = np.ones(np.shape(y))
     event_id = np.asarray(output_event_id)
     filename = np.asarray(output_filename)
     energy = np.asarray(output_energy)

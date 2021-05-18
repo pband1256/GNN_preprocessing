@@ -21,6 +21,8 @@ parser.add_argument("--emin",type=float,default=0,
                     dest="emin",help="minimum energy")
 parser.add_argument("--emax",type=float,default=float('inf'),
                     dest="emax",help="maximum energy")
+parser.add_argument("--flat",type=float,default=1,
+                    dest="flat",help="generate flat sample")
 args = parser.parse_args()
 
 # Masking non-coordinate features of feature array
@@ -102,18 +104,27 @@ def pickleList(fileList):
     # X_all = mask_coordinates(X_all)
     
     data = [X_all,y_all,w_all,e_all,f_all,E_all]
+    print("Total number of events: ", np.shape(data[1])[0])
+    print("(Non-flat) sample differential: ", np.shape(data[1])[0]-np.sum(data[1]))
+    print("Tracks: ", np.sum(data[1]))
+    print("Cascades: ", np.size(data[1])-np.sum(data[1]),'\n')
+
 
     ####### Energy cuts
-    #data = energy_cut(data, args.emin, args.emax)
-    ####### Creating 50/50 sample
-    data = create_equal_samples(data)
+    if args.emin != 0 and args.emax !=float('inf'): 
+        data = energy_cut(data, args.emin, args.emax)
+
+    ####### Creating flat sample
+    if args.flat:
+        data = create_equal_samples(data)
 
     return data
 
 # Shuffling ALL files in folder to make sure there's no systematic problem. Probably overkill.
 nb_total = args.nb_train + args.nb_val + args.nb_test
 total_file = glob.glob(args.inp + '/*.pkl')
-print(nb_total, len(total_file))
+print("Number of files used: ", nb_total)
+print("Number of files total: ", len(total_file),'\n')
 assert nb_total <= len(total_file), "Not enough files to create samples."
 random.shuffle(total_file)
 

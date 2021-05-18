@@ -11,25 +11,28 @@
 #SBATCH --mail-user=lehieu1
 
 # Dataset
-TRAINFILE=( /mnt/scratch/lehieu1/training_files/processed/test/train_file* )
-VALFILE='/mnt/scratch/lehieu1/training_files/processed/test/val_file.pkl'
-TESTFILE='/mnt/scratch/lehieu1/training_files/processed/test/test_file.pkl'
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/11900/processed/train_file* )
+VALFILE='/mnt/scratch/lehieu1/training_files/11900/processed/val_file.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/11900/processed/test_file.pkl'
 
-NB_FILE=10
-NB_TRAIN=1000000
-NB_VAL=100000
-NB_TEST=100000
+NB_FILE=1
+NB_TRAIN=147000
+NB_VAL=20000
+NB_TEST=20000
 
 # Experiment
 export SLURM_TIME_FORMAT='%m%d%y'
 DATE=$(squeue -j ${SLURM_JOB_ID} -o "%V")
-NAME="${DATE: -6}_11374_IChit_filtered_5050_test"
+NAME="${DATE: -6}_11900_dir_test"
+#IChit_filtered_5050_test
 RUN="$SLURM_ARRAY_TASK_ID"
 
 PATIENCE=200
 NB_EPOCH=200
 LRATE=0.05
 BATCH_SIZE=32
+EVAL=""
+#EVAL="--evaluate"
 
 # Network hyperparameters
 NB_LAYER=10
@@ -42,7 +45,7 @@ NB_EPOCH=`expr ${NB_EPOCH} \* ${NB_FILE}`
 TRAINFILE_SLICED=${TRAINFILE[@]:0:${NB_FILE}}
 
 # Entering arguments
-PYARGS="--name $NAME --run $RUN --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN"
+PYARGS="--name $NAME --run $RUN --train_file ${TRAINFILE_SLICED[@]} --val_file $VALFILE --test_file $TESTFILE $OPTIONS --nb_train $NB_TRAIN --nb_val $NB_VAL --nb_test $NB_TEST --batch_size $BATCH_SIZE --nb_epoch $NB_EPOCH --lrate $LRATE --patience $PATIENCE --nb_layer $NB_LAYER --nb_hidden $NB_HIDDEN $EVAL"
 
 echo -e "\nStarting experiment with name $NAME...\n"
 

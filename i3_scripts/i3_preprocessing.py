@@ -18,6 +18,10 @@ parser.add_argument("--gcdfile",type=str,default="/mnt/research/IceCube/gcd_file
 args = parser.parse_args()
 
 
+##########################
+### Muon repropagation ###
+##########################
+
 #rename MMCTrackList to something temporary
 def I3MCTpmp_2_I3MCT(frame):
     frame["MMCTrackList_temp"] = frame["MMCTrackList"]
@@ -35,29 +39,32 @@ randomService = phys_services.I3SPRNGRandomService(
     nstreams = 200000000,
     streamnum = 100014318)
 
+##########################
+### File preprocessing ###
+##########################
 
 for name in args.name:
     infile = name
     outfile = name.replace('Level2_IC86','processed/processed_Level2_IC86')
 
-    # 1. Generate I3MCTree object from I3MCTree_preMuonProp with seed
-    # 2. Calculate muon entry and deposited energy
-    # 3. Insert event label
 
     tray = I3Tray()
     tray.AddModule('I3Reader', 'reader',
 	     Filename=infile)
-    print("--------- Propagating muon and generating I3MCTree ----------")
-    tray.Add(I3MCTpmp_2_I3MCT,Streams=[icetray.I3Frame.DAQ,icetray.I3Frame.Physics])
-    tray.Add(segments.PropagateMuons, 'PropagateMuons',
-	     RandomService=randomService,
-	     SaveState=True,
-	     InputMCTreeName="I3MCTree_preMuonProp",
-	     OutputMCTreeName="I3MCTree")
-    tray.Add(I3MCT_2_I3MCTpmp,Streams=[icetray.I3Frame.DAQ,icetray.I3Frame.Physics])
+    # 1. Generate I3MCTree object from I3MCTree_preMuonProp with seed
+    #print("--------- Propagating muon and generating I3MCTree ----------")
+    #tray.Add(I3MCTpmp_2_I3MCT,Streams=[icetray.I3Frame.DAQ,icetray.I3Frame.Physics])
+    #tray.Add(segments.PropagateMuons, 'PropagateMuons',
+    #         RandomService=randomService,
+    #         SaveState=True,
+    #         InputMCTreeName="I3MCTree_preMuonProp",
+    #         OutputMCTreeName="I3MCTree")
+    #tray.Add(I3MCT_2_I3MCTpmp,Streams=[icetray.I3Frame.DAQ,icetray.I3Frame.Physics])
 
+    # 2. Calculate muon entry and deposited energy
     print("--------- Calculating muon energy -----------")
     tray.AddModule(utils.get_most_E_muon_info, gcdfile=args.gcdfile)
+    # 3. Insert event label
     print("--------- Classifying event ----------")
     tray.AddModule(utils.classify, gcdfile=args.gcdfile)
 
