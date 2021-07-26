@@ -13,7 +13,7 @@ FILE_NR=`expr $SLURM_ARRAY_TASK_ID`
 FILE_NR=`printf "%03d\n" $FILE_NR`
 
 #i3env=/cvmfs/icecube.opensciencegrid.org/py3-v4.1.0/RHEL_7_x86_64/metaprojects/combo/V00-00-03/env-shell.sh
-script=/mnt/home/lehieu1/IceCube/code/GNN/i3_scripts/pkl_training_files.py
+script=/mnt/home/lehieu1/IceCube/code/GNN/i3_scripts/src/pkl_training_files.py
 
 # set 21217
 #INDIR=/mnt/scratch/lehieu1/data/21217/0004000-0004999/processed/

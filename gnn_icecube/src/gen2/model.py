@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import numpy as np
 
 ###########################
 #     CORE MODEL CODE     #
@@ -12,22 +13,22 @@ class GNN(nn.Module):
     - Runs through several graph convolution layers of specified type
     - Performs final classification using logistic regression
   '''
-  def __init__(self, nb_hidden, nb_layer, input_dim, spatial_dims=None):
+  def __init__(self, nb_hidden, nb_layer, input_dim, output_dim, spatial_dim=None):
     super(GNN, self).__init__()
     # Initialize GNN layers
     first_layer = GNN_Layer(
                             input_dim, 
                             nb_hidden, 
-                            kernel=GaussianSoftmax(spatial_dims).cuda(),
+                            kernel=GaussianSoftmax(spatial_dim).cuda(),
                             apply_norm=False
                            )
     rem_layers = [GNN_Layer(nb_hidden, nb_hidden) for _ in range(nb_layer-1)]
     self.layers = nn.ModuleList([first_layer]+rem_layers)
     self.layers.cuda()
     # Initialize final readout layer
-    self.readout_fc = nn.Linear(nb_hidden, 1)
+    self.readout_fc = nn.Linear(nb_hidden, output_dim)
     self.readout_norm = nn.InstanceNorm1d(1)
-    self.readout_act = nn.Sigmoid()
+    self.readout_act = nn.ReLU()
 
   def forward(self, emb, mask, batch_nb_nodes):
     batch_size, nb_pts, input_dim  = emb.size()
@@ -41,7 +42,7 @@ class GNN(nn.Module):
     emb = self.readout_norm(emb.unsqueeze(1)).squeeze(1)
     # Logistic regression
     emb = self.readout_fc(emb)
-    emb = self.readout_act(emb).squeeze(1)
+    #emb = self.readout_act(emb).squeeze(1)
     return emb
 
 class GNN_Layer(nn.Module):

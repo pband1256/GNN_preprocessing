@@ -5,15 +5,15 @@
 #SBATCH -o /mnt/scratch/lehieu1/log/data/create_pkl_job_%a.log
 #SBATCH --job-name=create_pkl
 
-script=/mnt/home/lehieu1/IceCube/code/GNN/create_train_val_test.py
+script=/mnt/home/lehieu1/IceCube/code/GNN/reco_create_train_val_test.py
 
-NB_TRAIN=700
-NB_VAL=100
-NB_TEST=100
+NB_TRAIN=950
+NB_VAL=0
+NB_TEST=0
 NB_SPLIT=1
 
-INDIR=/mnt/scratch/lehieu1/training_files/11900_FinalLevel
-OUTDIR=/mnt/scratch/lehieu1/training_files/11900_FinalLevel/processed
+INDIR=/mnt/scratch/lehieu1/training_files/11900_SplineMPE
+OUTDIR=${INDIR}/processed
 mkdir -p ${OUTDIR}
 #EMIN=0
 #EMAX=500

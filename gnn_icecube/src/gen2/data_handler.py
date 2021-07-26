@@ -22,6 +22,7 @@ def collate_icecube(samples):
     w = [s[2] for s in samples]
     evt_ids   = [s[3] for s in samples]
     evt_names = [s[4] for s in samples]
+    energy    = [s[5] for s in samples]
 
     X, adj_mask, batch_nb_nodes = pad_batch(X)
     
@@ -30,7 +31,7 @@ def collate_icecube(samples):
     w = torch.FloatTensor(w)
     adj_mask = torch.FloatTensor(adj_mask)
     batch_nb_nodes = torch.FloatTensor(batch_nb_nodes)
-    return X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names
+    return X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names, energy
 
 def pad_batch(X):
     nb_samples = len(X)
@@ -59,6 +60,7 @@ class IceCube_Dataset(Dataset):
         self.w = weights[:nb_samples]
         self.e = event_id[:nb_samples]
         self.f = filenames[:nb_samples]
+        self.E = energy[:nb_samples]
 
     def __getitem__(self, index):
         X_i = self.X[index] # leave out nstring
@@ -66,7 +68,8 @@ class IceCube_Dataset(Dataset):
         w_i = self.w[index]
         e_i = self.e[index]
         f_i = self.f[index]
-        return X_i, y_i, w_i, e_i, f_i
+        E_i = self.E[index]
+        return X_i, y_i, w_i, e_i, f_i, E_i
 
     def __len__(self):
         return len(self.w)

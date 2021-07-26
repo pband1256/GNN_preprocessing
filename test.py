@@ -1,17 +1,14 @@
 import pickle
 import numpy as np
+import pandas as pd
 #from sklearn.utils import shuffle
 
-with open('/mnt/scratch/lehieu1/training_files/processed/11029_FinalLevel/test_file.pkl','rb') as f:
-#with open('/mnt/scratch/lehieu1/training_files/11374_IC_hit_filtered/080620_000500_training.pkl','rb') as f:
+with open('/mnt/scratch/lehieu1/training_files/11900_regr_logE/processed/test_file.pkl','rb') as f:
     X,y,w,e,f,E = pickle.load(f)
 
-print("Tracks: ", np.sum(y))
-print("Cascades: ", np.size(y)-np.sum(y))
-#print(np.shape(X))
-#print(np.shape(X[0]))
+print(pd.DataFrame([e,E]).transpose())
+e = np.array([e])
+hist, bins = np.histogram(e,bins=np.arange(np.min(e),np.max(e)))
+print(hist)
 
-#X_data,y_data,w_data,e_data,f_data = shuffle(X_data,y_data,w_data,e_data,f_data)
 
-#with open('/mnt/scratch/lehieu1/training_files/150000pts_10dup_weight1.pkl','wb') as f:
-#    pickle.dump([X_data,y_data,w_data,e_data,f_data],f)

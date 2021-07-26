@@ -169,12 +169,10 @@ def read_files(filename_list, gcdfile):
     """
     output_features_IC = []
     output_labels = []
-    #output_weights = []
     output_event_id = []
     output_filename = []
     output_energy = []
     output_num_pulses_per_dom = []
-    isOther_count = 0  # check if not NC/CC
     
     StringLocations = GetStringLocations(gcdfile)
     print(np.shape(StringLocations))
@@ -221,29 +219,20 @@ def read_files(filename_list, gcdfile):
             nu_time = nu.time
 
             # Classification flag here
-            isCC = np.rad2deg(nu_zenith) >= 90  # upgoing
-            isNC = np.rad2deg(nu_zenith) < 90  # downgoing
-            isOther = not isCC and not isNC
+            num_label = 6
+            label_zenith = np.rad2deg(nu_zenith)
+            label = np.zeros(num_label)
 
-            # input file sanity check: this should not print anything since "isOther" should always be false
-            if isOther:
-                print("isOTHER - not upgoing or downgoing...skipping event...")
-                isOther_count += 1
-                continue
-            
-            # set direction classification, 1 = upgoing, 0 = downgoing
-            if isCC:
-                isTrack = True
-                isCascade = False
-            else:
-                isTrack = False
-                isCascade = True
+            for i in range(num_label):
+               threshold = (i+1)*(180/num_label)
+               if label_zenith <= threshold:
+                   label[i] = 1
+                   break
             
             IC_array = get_observable_features(frame,StringLocations)
 
-            output_labels.append(float(isTrack)) # label y
+            output_labels.append(label) # multiclass label y
             output_features_IC.append(IC_array) # feature X, but x,y,z=string,DOM,DOM_index as of now
-            #output_weights.append(frame['I3MCWeightDict']['OneWeight'])
             output_event_id.append(frame["I3EventHeader"].event_id)
             output_filename.append(event_file_name)
             try:             
@@ -251,14 +240,11 @@ def read_files(filename_list, gcdfile):
             except:
                 output_energy.append(nu_energy)    
 
-        print("Got rid of %i events classified as other so far"%isOther_count)
-
         # close the input file once we are done
         del event_file
 
     X = np.asarray(output_features_IC)
     y = np.asarray(output_labels)
-    #weights = np.asarray(output_weights)
     weights = np.ones(np.shape(y))
     event_id = np.asarray(output_event_id)
     filename = np.asarray(output_filename)

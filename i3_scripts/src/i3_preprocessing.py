@@ -26,13 +26,11 @@ args = parser.parse_args()
 def I3MCTpmp_2_I3MCT(frame):
     frame["MMCTrackList_temp"] = frame["MMCTrackList"]
     del frame["MMCTrackList"]
-
 #delete "new" mmctracklist and replace with the temp (temp already had coincident and primary events mereged and propagated)
 def I3MCT_2_I3MCTpmp(frame):
     del frame["MMCTrackList"]
     frame["MMCTrackList"] = frame["MMCTrackList_temp"]
     del frame["MMCTrackList_temp"]
-
 #repropagate the muons in mctree
 randomService = phys_services.I3SPRNGRandomService(
     seed = 10000,
@@ -45,8 +43,7 @@ randomService = phys_services.I3SPRNGRandomService(
 
 for name in args.name:
     infile = name
-    outfile = name.replace('Level2_IC86','processed/processed_Level2_IC86')
-
+    outfile = name.replace('11900_MUONGUN','preproc/preproc_11900_MUONGUN')
 
     tray = I3Tray()
     tray.AddModule('I3Reader', 'reader',
@@ -65,8 +62,8 @@ for name in args.name:
     print("--------- Calculating muon energy -----------")
     tray.AddModule(utils.get_most_E_muon_info, gcdfile=args.gcdfile)
     # 3. Insert event label
-    print("--------- Classifying event ----------")
-    tray.AddModule(utils.classify, gcdfile=args.gcdfile)
+    #print("--------- Classifying event ----------")
+    #tray.AddModule(utils.classify, gcdfile=args.gcdfile)
 
     tray.AddModule("I3Writer", 'writer',
 	     Filename=outfile)

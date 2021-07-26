@@ -76,7 +76,7 @@ def pickleList(fileList):
     for fileName in fileList:
         try:
             with open(fileName,'rb') as f:
-                X, y, weights, event_id, filenames, energy = pickle.load(f)
+                X, y, weights, event_id, filenames, energy, reco = pickle.load(f)
             if first == True:
                 X_all = X
                 y_all = y
@@ -84,6 +84,7 @@ def pickleList(fileList):
                 e_all = event_id
                 f_all = filenames
                 E_all = energy
+                r_all = reco
                 first = False
             else:
                 X_all = np.concatenate((X_all,X))
@@ -92,6 +93,7 @@ def pickleList(fileList):
                 e_all = np.concatenate((e_all,event_id))
                 f_all = np.concatenate((f_all,filenames))
                 E_all = np.concatenate((E_all,energy))
+                r_all = np.concatenate((r_all,reco))
         except ValueError or EOFError as e:
             print("Error: file "+fileName+" failed to pickle correctly. Skipping file")
             print(e)
@@ -103,7 +105,7 @@ def pickleList(fileList):
     ####### Masking coordinates
     # X_all = mask_coordinates(X_all)
     
-    data = [X_all,y_all,w_all,e_all,f_all,E_all]
+    data = [X_all,y_all,w_all,e_all,f_all,E_all,r_all]
     print("Total number of events: ", np.shape(data[1])[0])
     print("(Non-flat) sample differential: ", np.shape(data[1])[0]-np.sum(data[1]))
     print("Tracks: ", np.sum(data[1]))

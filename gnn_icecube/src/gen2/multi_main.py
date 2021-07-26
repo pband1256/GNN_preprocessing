@@ -29,27 +29,31 @@ def train_one_epoch(net,
                     optimizer,
                     args,
                     experiment_dir,
-                    train_loader):
+                    train_loader,
+                    ):
   net.train()
   nb_train = len(train_loader) * args.batch_size
   epoch_loss = 0
-  pred_y = np.zeros((nb_train))
-  true_y = np.zeros((nb_train))
-  weights = np.zeros((nb_train))
+
+  pred_y = np.zeros((nb_train, output_dim))
+  true_y = np.zeros((nb_train, output_dim))
   for i, batch in enumerate(train_loader):
-    X, y, w, adj_mask, batch_nb_nodes, _, _ = batch
+    X, y, w, adj_mask, batch_nb_nodes, _, _, _ = batch
+
+    # Pick corresponding labels
+    y = y[:,INDEX:INDEX+output_dim]
+
     X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
     optimizer.zero_grad()
     out = net(X, adj_mask, batch_nb_nodes)
-    loss = criterion(out, y, w).cuda()
+    loss = criterion(out, y).cuda()
     loss.backward()
     optimizer.step()
     
     beg =     i * args.batch_size
     end = (i+1) * args.batch_size
-    pred_y[beg:end]  = out.data.cpu().numpy()
-    true_y[beg:end]  = y.data.cpu().numpy()
-    weights[beg:end] = w.data.cpu().numpy()
+    pred_y[beg:end,:] = out.data.cpu().numpy()
+    true_y[beg:end,:] = y.data.cpu().numpy()
     
     epoch_loss += loss.item()
     # Print running loss about 10 times during each epoch
@@ -57,13 +61,9 @@ def train_one_epoch(net,
       nb_proc = (i+1)*args.batch_size
       logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
 
-  tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
-                                      experiment_dir, 'train', args.eval_tpr)
-
   epoch_loss /= nb_train
-  logging.info("Train: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e}".format(
-                                                      epoch_loss, roc, tpr))
-  return (tpr, roc, epoch_loss)
+  logging.info("Train: loss {:>.3E}".format(epoch_loss))
+  return (epoch_loss)
 
 
 def train(
@@ -83,7 +83,7 @@ def train(
     logging.info("\nEpoch {}".format(i+1))
     logging.info("Learning rate: {0:.3g}".format(args.lrate))
     
-    ######### Switching between training sets
+    # Switching between training sets
     train_loader = multi_train_loader[i % len(multi_train_loader)]
     logging.info("Training on "+args.train_file[i % len(multi_train_loader)])
 
@@ -99,15 +99,15 @@ def train(
       utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
 
       # Update learning rate, remaining nb epochs to train
-      scheduler.step(val_stats[0])
+      scheduler.step(val_stats)
 
       # Track best model performance
-      if (val_stats[0] > args.best_tpr):
+      if (val_stats < args.best_loss):
         logging.warning("Best performance on valid set.")
-        args.best_tpr = float(val_stats[0])
+        args.best_loss = float(val_stats)
         utils.update_best_plots(experiment_dir)
         utils.save_best_model(experiment_dir, net)
-        utils.save_best_scores(i, val_stats[2], val_stats[0], val_stats[1], val_stats[3], experiment_dir)
+        utils.save_best_scores(i, val_stats, experiment_dir)
         utils.save_epoch_model(experiment_dir, net)
 
     args.lrate = optimizer.param_groups[0]['lr']
@@ -135,58 +135,81 @@ def evaluate(net,
     nb_batches = len(valid_loader)
     nb_eval = nb_batches * args.batch_size
     # Track samples by batches for scoring
-    pred_y = np.zeros((nb_eval))
-    true_y = np.zeros((nb_eval))
-    weights = np.zeros((nb_eval))
+    pred_y = np.zeros((nb_eval, output_dim))
+    true_y = np.zeros((nb_eval, output_dim))
     evt_id = []
     f_name = []
+    E_name = []
     logging.info("Evaluating {} {} samples.".format(nb_eval,plot_name))
     with torch.autograd.no_grad():
         for i, batch in enumerate(valid_loader):
-            X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names = batch
+            X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names, energy = batch
+            # Pick corresponding labels
+            y = y[:,INDEX:INDEX+output_dim]
+            # Remove one-hot encoding
+            #y_org = y.to(device)
+            #y = np.argmax(y,axis=1).long()
             X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
             out = net(X, adj_mask, batch_nb_nodes)
-            loss = criterion(out, y, w).cuda()
+
+            loss = criterion(out, y).cuda()
             epoch_loss += loss.item() 
             # Track predictions, truth, weights over batches
             beg =     i * args.batch_size
             end = (i+1) * args.batch_size
-            pred_y[beg:end] = out.data.cpu().numpy()
-            true_y[beg:end] = y.data.cpu().numpy()
-            weights[beg:end] = w.data.cpu().numpy()
+            pred_y[beg:end,:] = out.data.cpu().numpy()
+            true_y[beg:end,:] = y.data.cpu().numpy()
             if plot_name==TEST_NAME:
                 evt_id.extend(evt_ids)
                 f_name.extend(evt_names)
+                E_name.extend(energy)
 
             # Print running loss 2 times 
             if (((i+1) % (nb_batches//2)) == 0):
                 nb_proc = (i+1)*args.batch_size
-                logging.info("  {:5d}: {:.9f}".format(nb_proc,
-                                                      epoch_loss/nb_proc))
+                logging.info("  {:5d}: {:.9f}".format(nb_proc, epoch_loss/nb_proc))
 
     # Score predictions, save plots, and log performance
     epoch_loss /= nb_eval # Normalize loss
-    tpr, roc = utils.score_plot_preds(true_y, pred_y, weights,
-                                      experiment_dir, plot_name, args.eval_tpr)
-    threshold = 0.5
-    pred_y_rounded = (pred_y - threshold + 0.5).round()
-    acc_score = accuracy_score(true_y, pred_y_rounded, sample_weight=weights)
-    logging.info("{}: loss {:>.3E} -- AUC {:>.3E} -- TPR {:>.3e} -- Acc {:>.3e}".format(
-                                      plot_name, epoch_loss, roc, tpr, acc_score))
+    logging.info("{}: loss {:>.3E}".format(plot_name, epoch_loss))
 
     if plot_name == TEST_NAME:
-        labels = ['Cascade','Track']
-        utils.plot_pred_hist(true_y, pred_y, experiment_dir, args.name)
-        utils.plot_confusion(true_y, pred_y_rounded, experiment_dir, args.name, labels=labels)
-        utils.save_test_scores(nb_eval, epoch_loss, tpr, roc, acc_score, experiment_dir)
-        utils.save_preds(evt_id, f_name, pred_y, true_y, experiment_dir)
-    return (tpr, roc, epoch_loss, acc_score)
+        
+        # Resolution plot
+        if args.regr_mode == 'direction':
+            regr_mode = np.array(['zenith','azimuth'])
+            #utils.plot_energy_slices = np.vectorize(utils.plot_energy_slices, excluded=['truth','nn_reco','old_reco'])
+        elif args.regr_mode == 'direction_cart':
+            regr_mode = np.array(['x','y','z'])
+            #utils.plot_energy_slices = np.vectorize(utils.plot_energy_slices, excluded=['truth','nn_reco','old_reco'])
+        elif args.regr_mode == 'energy':
+            regr_mode = 'energy'
+
+        #utils.plot_energy_slices(true_y, pred_y, regr_mode=regr_mode, use_fraction=True, bins=20, minenergy=np.min(energy), maxenergy=np.max(energy), save=True, savefolder=experiment_dir)
+        utils.plot_reg_hist(true_y, pred_y, experiment_dir, plot_name, regr_mode=regr_mode)
+        utils.save_test_scores(nb_eval, epoch_loss, experiment_dir)
+        utils.save_preds(evt_id, f_name, E_name, pred_y, true_y, experiment_dir)
+    return (epoch_loss)
 
 
 def main():
-  input_dim=7
-  spatial_dims=[0,1,2]
+  input_dim = 7
+  spatial_dim = [0,1,2]
   args = utils.read_args()
+
+  global output_dim
+  global INDEX
+  if args.regr_mode == 'energy':
+      output_dim = 1
+      INDEX = 0
+  elif args.regr_mode == 'direction':
+      output_dim = 2
+      INDEX = 1
+  elif args.regr_mode == 'direction_cart':
+      output_dim = 3
+      INDEX = 3
+  else:
+      assert True, 'Regression quantity not defined'
 
   experiment_dir = utils.get_experiment_dir(args.name, args.run)
   utils.initialize_experiment_if_needed(experiment_dir, args.evaluate)
@@ -199,20 +222,17 @@ def main():
     try:
       args = utils.load_args(experiment_dir)
     except:
-      args.best_tpr = 0.0
+      args.best_loss = np.Inf
       args.nb_epochs_complete = 0 # Track in case training interrupted
       utils.save_args(experiment_dir, args) # Save initial args
-
-  #################################
-  #wandb.init(project=args.project, name=args.name)
-  #################################
 
   net = utils.create_or_restore_model(
                                     experiment_dir, 
                                     args.nb_hidden, 
                                     args.nb_layer,
                                     input_dim,
-                                    spatial_dims
+                                    output_dim,
+                                    spatial_dim
                                     )
   if not torch.cuda.is_available():
     raise Exception('No GPU available.')
@@ -225,7 +245,8 @@ def main():
   global device
   device = torch.device('cuda')
 
-  criterion = nn.functional.binary_cross_entropy
+  # Multiclass loss function
+  criterion = nn.MSELoss()  #CrossEntropyLoss()
   if not args.evaluate:
     assert (args.train_file != None)
     assert (args.val_file   != None)
