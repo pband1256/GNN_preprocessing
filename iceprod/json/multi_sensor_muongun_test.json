@@ -225,7 +225,7 @@
               "type": "permanent"
             }
           ],
-          "iterations": 15,
+          "iterations": 1,
           "modules": [
             {
               "args": {
