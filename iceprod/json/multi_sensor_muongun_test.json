@@ -18,7 +18,7 @@
           "DEgg": 1.48
       },
       "Sensor": "$steering(Sensors)[$eval($args(iter) // $len($steering(EfficiencyScales)))]",
-      "DOMOversizeFactor": 5,
+      "DOMOversizeFactor": 1,
       "GeoName": "Sunflower_240m",
       "wd":"/cvmfs/icecube.opensciencegrid.org/users/gen2-optical-sim/",
       "GCDFiles": {
@@ -250,6 +250,139 @@
               },
               "resources": [],
               "running_class": "icecube.gen2_sim.segments.DownsamplePEs"
+            }
+          ],
+          "name": "",
+          "parameters": {
+          },
+          "resources": []
+        }
+      ]
+    },
+    {
+      "batchsys": null,
+      "classes": [
+      ],
+      "data": [],
+      "depends": [
+        "hits"
+      ],
+      "name": "detector",
+      "parameters": {
+      },
+      "requirements": {
+        "memory": 8
+      },
+      "resources": [],
+      "trays": [
+        {
+          "classes": [],
+          "data": [
+            {
+              "compression": false,
+              "local": "$steering(outfile)_hits.i3.bz2",
+              "movement": "input",
+              "remote": "$steering(TARGET::hits)/$steering(outfile)_hits.i3.bz2",
+              "type": "permanent"
+            },
+            {
+              "compression": false,
+              "local": "$steering(outfile)_detsim.i3.bz2",
+              "movement": "output",
+              "remote": "",
+              "type": "job_temp"
+            }
+          ],
+          "iterations": 1,
+          "modules": [
+            {
+              "args": {
+                "gcdfile": "$steering(GCDFile)",
+                "inputfilelist": [
+                  "$steering(outfile)_hits.i3.bz2"
+                ],
+                "outputfile": "$steering(outfile)_detsim.i3.bz2",
+                "nproc": "$(jobs_submitted)",
+                "seed": "$steering(seed)",
+                "procnum": "$(job)",
+                "RunId": "$(job)",
+                "pregeneratedmDOM": true,
+                "ZeroHitFilter":true,
+                "Sensors": ["IceCube", "$steering(Sensor)"],
+                "InputMCPESeriesMaps":["I3MCPESeriesMap_IceCube", "I3MCPESeriesMap_$steering(Sensor)"]
+              },
+              "classes": [],
+              "data": [],
+              "env_clear": false,
+              "env_shell": "$steering(env)",
+              "name": "MakePEFromPhotons",
+              "parameters": {
+              },
+              "resources": [],
+              "running_class": "icecube.gen2_sim.segments.DetectorSimulation"
+            }
+          ],
+          "name": "",
+          "parameters": {
+          },
+          "resources": []
+        }
+      ]
+    },
+    {
+      "batchsys": null,
+      "classes": [
+      ],
+      "data": [],
+      "depends": [
+        "detector"
+      ],
+      "name": "baseproc",
+      "parameters": {
+      },
+      "requirements": {
+        "memory": 4
+      },
+      "resources": [],
+      "trays": [
+        {
+          "classes": [],
+          "data": [],
+          "iterations": 1,
+          "modules": [
+            {
+              "args": {
+                "gcdfile": "$steering(GCDFile)",
+                "inputfilelist": [
+                  "$steering(outfile)_detsim.i3.bz2"
+                ],
+                "outputfile": "$steering(outfile)_baseproc.i3.bz2"
+              },
+              "classes": [
+              ],
+              "data": [
+                {
+                  "compression": false,
+                  "local": "$steering(outfile)_detsim.i3.bz2",
+                  "movement": "input",
+                  "remote": "",
+                  "type": "job_temp"
+                },
+                {
+                  "compression": false,
+                  "local": "$steering(outfile)_baseproc.i3.bz2",
+                  "movement": "output",
+                  "remote": "$steering(TARGET::baseproc)/$steering(outfile)_baseproc.i3.bz2",
+                  "type": "permanent"
+                }
+              ],
+              "env_clear": false,
+              "env_shell": "$steering(env)",
+              "name": "baseproc",
+              "parameters": {
+              },
+              "resources": [],
+              "running_class": "icecube.gen2_sim.segments.BaseProcessing"
             }
           ],
           "name": "",
