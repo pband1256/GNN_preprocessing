@@ -93,7 +93,7 @@ def train(
     if (((i+1) % len(multi_train_loader)) == 0):
       val_stats = evaluate(net, criterion, experiment_dir, args,
                             valid_loader, 'Valid')                          
-      utils.track_epoch_stats(i, args.lrate, 0, train_stats, val_stats, experiment_dir)
+      utils.track_epoch_stats(i/len(args.train_file), args.lrate, 0, train_stats, val_stats, experiment_dir)
 
       # Update learning rate, remaining nb epochs to train
       scheduler.step(val_stats)
@@ -101,10 +101,12 @@ def train(
       # Track best model performance
       if (val_stats < args.best_loss):
         logging.warning("Best performance on valid set.")
+        nb_files = len(args.train_file)
         args.best_loss = float(val_stats)
+        utils.plot_loss(train_stats, val_stats, i//nb_files, experiment_dir)
         utils.update_best_plots(experiment_dir)
         utils.save_best_model(experiment_dir, net)
-        utils.save_best_scores(i, val_stats, experiment_dir)
+        utils.save_best_scores(i/nb_files, val_stats, experiment_dir)
         utils.save_epoch_model(experiment_dir, net)
 
     args.lrate = optimizer.param_groups[0]['lr']
@@ -173,19 +175,21 @@ def evaluate(net,
     logging.info("{}: loss {:>.3E}".format(plot_name, epoch_loss))
 
     if plot_name == TEST_NAME:
-        
+        E_min = np.min(E_name)
+        E_max = np.max(E_name) 
         # Resolution plot
+        '''
         if args.regr_mode == 'direction':
-            regr_mode = np.array(['zenith','azimuth'])
-            #utils.plot_energy_slices = np.vectorize(utils.plot_energy_slices, excluded=['truth','nn_reco','old_reco'])
+            utils.plot_energy_slices(true_y[:,0], pred_y[:,0], regr_mode='zenith', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
+            utils.plot_energy_slices(true_y[:,1], pred_y[:,1], regr_mode='azimuth', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
         elif args.regr_mode == 'direction_cart':
-            regr_mode = np.array(['x','y','z'])
-            #utils.plot_energy_slices = np.vectorize(utils.plot_energy_slices, excluded=['truth','nn_reco','old_reco'])
+            utils.plot_energy_slices(true_y[:,0], pred_y[:,0], regr_mode='x', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
+            utils.plot_energy_slices(true_y[:,1], pred_y[:,1], regr_mode='y', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
+            utils.plot_energy_slices(true_y[:,2], pred_y[:,2], regr_mode='z', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
         elif args.regr_mode == 'energy':
-            regr_mode = 'energy'
-
-        #utils.plot_energy_slices(true_y, pred_y, regr_mode=regr_mode, use_fraction=True, bins=20, minenergy=np.min(energy), maxenergy=np.max(energy), save=True, savefolder=experiment_dir)
-        #utils.plot_reg_hist(true_y, pred_y, experiment_dir, plot_name, regr_mode=regr_mode)
+            utils.plot_energy_slices(true_y, pred_y, regr_mode='energy', use_fraction=True, old_reco=r_name, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
+        '''
+        utils.plot_reg_hist(true_y, pred_y, experiment_dir, regr_mode=args.regr_mode)
         utils.save_test_scores(nb_eval, epoch_loss, experiment_dir)
         utils.save_preds(evt_id, f_name, E_name, pred_y, true_y, experiment_dir)
     return (epoch_loss)

@@ -208,7 +208,7 @@ def update_best_plots(experiment_dir):
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
 
-def plot_reg_hist(true_y, pred_y, experiment_dir, plot_name, regr_mode='energy'):
+def plot_reg_hist(true_y, pred_y, experiment_dir, plot_name='reg_hist', regr_mode='energy'):
   # Plotting
   plt.clf()
   nullfmt = NullFormatter()
@@ -235,13 +235,12 @@ def plot_reg_hist(true_y, pred_y, experiment_dir, plot_name, regr_mode='energy')
 
   if regr_mode == 'energy':
     bins = np.logspace(np.log10(hist_min), np.log10(hist_max), 100)
-    im = axHist.hist2d(pred_y.squeeze(), true_y.squeeze(), norm=colors.LogNorm(), bins=(bins,bins))
-  elif regr_mode in ['zenith', 'azimuth', 'x', 'y', 'z']:
+    im = axHist.hist2d(pred_y.squeeze(), true_y.squeeze(), norm=colors.LogNorm(hist_min, hist_max, clip=True), bins=(bins,bins))
+  elif regr_mode in ['direction', 'direction_cart']:
     bins = np.linspace(hist_min, hist_max, 100)
     im = axHist.hist2d(pred_y.squeeze(), true_y.squeeze(), bins=(bins,bins))
   else:
     print('Regression mode unspecified.')
-
 
   axHist.plot(bins, bins, color='r')
 
@@ -250,36 +249,47 @@ def plot_reg_hist(true_y, pred_y, experiment_dir, plot_name, regr_mode='energy')
   axHisty.hist(true_y,  bins=bins, orientation='horizontal')
   axHistx.set_xlim(axHist.get_xlim())
   axHisty.set_ylim(axHist.get_ylim())
-
   # Style
   axHist.set_xlabel("Prediction")
   axHist.set_ylabel("Truth")
   axHistx.tick_params(labelbottom=False)
   axHisty.tick_params(labelleft=False)
   if regr_mode == 'energy':
-    axHist.set_xscale('log')
-    axHist.set_yscale('log')
-    axHistx.set_xscale('log')
-    axHistx.set_yscale('log')
-    axHisty.set_xscale('log')
-    axHisty.set_yscale('log')
+    axHist.set_xscale('symlog')
+    axHist.set_yscale('symlog')
+    axHistx.set_xscale('symlog')
+    axHistx.set_yscale('symlog')
+    axHisty.set_xscale('symlog')
+    axHisty.set_yscale('symlog')
   plt.suptitle("Prediction histogram ("+regr_mode+")")
   #cax = plt.axes([0.27, 0.8, 0.5, 0.05])
   #plt.colorbar(im, cax=cax)
 
   #Save
-  plotfile = experiment_dir+'/test_hist.png'
-  plt.savefig(plotfile)
-  plt.clf()
-  #Save
   plotfile = os.path.join(experiment_dir, '{}_{}.png'.format(plot_name, regr_mode))
   plt.savefig(plotfile)
   plt.clf()
+def plot_loss(train_loss, val_loss, epoch, experiment_dir, plot_name="LossProgress"):
+    plt.figure(figsize=(10,7))
+    plt.plot(epoch, train_loss, label="Training")
+    plt.plot(epoch, val_loss, label="Validation")
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+
+    plt.savefig("%s/%s.png"%(experiment_dir, plot_name))
+
+###########################
+######               ######
+###### Jessie's code ######
+######               ######
+###########################
 
 def plot_energy_slices(truth, nn_reco, regr_mode='energy',\
-                       use_fraction = False, use_old_reco = False, old_reco=None,\
+                       use_fraction = False, old_reco=None,\
                        bins=20,minenergy=3000.,maxenergy=300000.,\
-                       save=False,savefolder=None):
+                       savefolder=None):
     """Plots different energy slices vs each other (systematic set arrays)
     Receives:
         truth= array with truth labels
@@ -309,7 +319,7 @@ def plot_energy_slices(truth, nn_reco, regr_mode='energy',\
     medians  = np.zeros(len(energy_centers))
     err_from = np.zeros(len(energy_centers))
     err_to   = np.zeros(len(energy_centers))
-    if use_old_reco:
+    if old_reco != None:
         if use_fraction:
             resolution_reco = ((old_reco-truth)/truth)
         else:
@@ -335,7 +345,7 @@ def plot_energy_slices(truth, nn_reco, regr_mode='energy',\
             err_to_reco[i] = upper_lim_reco
     plt.figure(figsize=(10,7))
     plt.errorbar(energy_centers, medians, yerr=[medians-err_from, err_to-medians], xerr=[ energy_centers-energy_ranges[:-1], energy_ranges[1:]-energy_centers ], capsize=5.0, fmt='o',label="NN Reco")
-    if use_old_reco:
+    if old_reco != None:
         plt.errorbar(energy_centers, medians_reco, yerr=[medians_reco-err_from_reco, err_to_reco-medians_reco], xerr=[ energy_centers-energy_ranges[:-1], energy_ranges[1:]-energy_centers ], capsize=5.0, fmt='o',label="Pegleg Reco")
         plt.legend(loc="upper center")
     plt.plot([minenergy,maxenergy], [0,0], color='k')
@@ -349,9 +359,9 @@ def plot_energy_slices(truth, nn_reco, regr_mode='energy',\
     savename = "EnergyResolutionSlices_"+regr_mode
     if use_fraction:
         savename += "Frac"
-    if use_old_reco:
+    if old_reco != None:
         savename += "_CompareOldReco"
-    if save == True:
+    if save_folder != None:
         plt.savefig("%s%s.png"%(savefolder,savename))
 
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):
