@@ -361,7 +361,7 @@ def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experime
   csv_path = os.path.join(experiment_dir, STATS_CSV)
   with open(csv_path, 'a') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow((epoch, lrate)+train_stats+val_stats+(train_loss,))
+    writer.writerow((epoch, lrate)+(train_stats,val_stats)+(train_loss,))
 
 def save_preds(evt_id, f_name, energy, pred_y, true_y, experiment_dir):
   '''

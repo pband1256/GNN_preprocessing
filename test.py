@@ -3,12 +3,11 @@ import numpy as np
 import pandas as pd
 #from sklearn.utils import shuffle
 
-with open('/mnt/scratch/lehieu1/training_files/11900_regr_logE/processed/test_file.pkl','rb') as f:
-    X,y,w,e,f,E = pickle.load(f)
+with open('/mnt/scratch/lehieu1/training_files/iceprod_test/090721_000000_training.pkl','rb') as f:
+    X,y,w,e,f,E,r = pickle.load(f)
+    X = pd.DataFrame(X)
+    y = pd.DataFrame(y)
 
-print(pd.DataFrame([e,E]).transpose())
-e = np.array([e])
-hist, bins = np.histogram(e,bins=np.arange(np.min(e),np.max(e)))
-print(hist)
-
+print(X)
+print(y)
 

@@ -1,6 +1,6 @@
 {
   "categories": [],
-  "dataset": 99999,
+  "dataset": 20016,
   "description": "",
   "difplus": null,
   "options": {
@@ -31,27 +31,31 @@
       "mctype": "MuonGun",
       "mjd": 57087,
       "MuonGun::gamma": 1.4,
-      "nevents_per_bin": [11440, 2914, 1385, 823, 551, 397, 301, 236, 191, 158, 133, 114, 99, 86, 76, 68, 61, 55, 50, 45, 41, 38, 35, 32, 30, 28, 26, 24, 23, 22, 20, 19, 18, 17, 16, 15, 15, 14, 13, 13, 12, 12, 11, 11, 10, 10, 9, 10, 10, 9, 9, 9, 8, 8, 8, 8, 7, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-      "energy_bins" : [3000.0, 23780.687355387276, 64328.692014090178, 124634.27635397251, 204645.60858606751, 304255.73072505085, 423544.20940505184, 562425.26931071316, 720980.08629363112, 898621.4212075941, 1095840.7124572007, 1312661.5120648982, 1549195.4854107806, 1803250.7966990336, 2077124.0745278448, 2368680.8764229147, 2680510.4510034458, 3010233.7388539216, 3360932.9504045914, 3726842.4660986168, 4114399.7995273191, 4519014.1529783243, 4943723.1271279072, 5383793.4150734376, 5844843.8768077418, 6323063.0439518038, 6813425.2870411957, 7325948.4776545819, 7857954.8601981094, 8405919.4185906518, 8965412.6116360538, 9531071.1937759407, 10122249.502508814, 10738111.491109468, 11377423.522336673, 12005826.44216051, 12648753.794372043, 13303198.455296865, 14006047.464237079, 14718525.275664816, 15436318.138374712, 16154557.028960215, 16920467.74098213, 17681979.913028814, 18432761.51416181, 19228942.25774461, 20007273.692534864, 20830435.899676401, 21627261.173144907, 22467421.502002355, 23353994.738828585, 24203058.81306915, 25095975.762701869, 25939533.024078086, 26924116.873045269, 27961826.188249893, 28944273.901212201, 29975735.292546071, 31059399.646970548, 32198713.604707465, 33261162.990511846, 34373347.88606777, 35538302.233077578, 36759289.279201888, 38039822.345018744, 39212104.52220127, 40435594.037221111, 41713203.097849086, 43048048.922959372, 44443471.019538544, 45903050.161723569, 47208087.197924286, 48565664.483319029, 49978533.223654591, 51449622.772258386, 52982054.425076865, 54579156.463139869, 56244480.571830556, 57687093.529147975, 59182044.911192141, 60731801.639204741, 62338974.251782879, 64006326.891626798, 65736788.102244124, 67533462.509857506, 69399643.473660305, 71338826.796448573, 73354725.597449914, 75025323.601882398, 76749675.965485781, 78530027.119482204, 80368737.104399681, 82268288.674196944, 84231294.908928439, 86260507.377534777, 88358824.896320209, 90529302.932810694, 92775163.709446028, 95099807.066748053, 97506822.151255384, 100000000.0],
-      "MuonGun::from_energy": "$steering(energy_bins)[$(job)]",
-      "MuonGun::to_energy": "$steering(energy_bins)[$eval($(job)+1)]",
+      "nevents": 100,
+      "MuonGun::from_energy": 10000,
+      "MuonGun::to_energy": 10001,
       "MuonGun::median_energy": "$eval($eval(0.5*$eval($steering(MuonGun::to_energy)**$eval(1-$steering(MuonGun::gamma))) + $eval(1-0.5)*$eval($steering(MuonGun::from_energy)**$eval(1-$steering(MuonGun::gamma))))**$eval(1./$eval(1-$steering(MuonGun::gamma))))",
-      "nevents": "$steering(nevents_per_bin)[$(job)]",
       "outfile": "$sprintf('%s_%s_%.1fx_MuonGun.%06d.%06d',$steering(GeoName),$steering(Sensor),$steering(EfficiencyScale),$(dataset),$(job))",
       "priority": 0,
       "ptversion": "homogenous",
-      "env":"/cvmfs/icecube.opensciencegrid.org/py3-v4.1.1/icetray-env $steering(wd)software/icetray/build/",
+      "env":"/cvmfs/icecube.opensciencegrid.org/py3-v4.1.1/icetray-env /cvmfs/icecube.opensciencegrid.org/users/hieule/bld/",
       "seed": "$eval(1234+$(dataset)*3)",
       "subdirectory": "$sprintf('%07d-%07d',$eval($(job)//1000*1000),$eval($(job)//1000*1000+999))",
-      "TARGET::baseproc": "gsiftp://gridftp.icecube.wisc.edu/data/wipac/HEE/simulation/level2/MuonGun/$(dataset)/BaseProc/$steering(GeoName)/$steering(Sensor)/$sprintf('%.1fx',$steering(EfficiencyScale))/$steering(subdirectory)/",
-      "TARGET::hits": "gsiftp://gridftp.icecube.wisc.edu/data/wipac/HEE/simulation/MuonGun/$(dataset)/$steering(GeoName)/$steering(Sensor)/$sprintf('%.1fx',$steering(EfficiencyScale))/$steering(subdirectory)/",
-      "temp_file": "muongun",
+      "TARGET::baseproc": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::detsim": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::hits": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::photons": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::muongun": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",      "temp_file": "muongun",
       "weighted": "weighted",
       "year": 2025
     },
     "resources": [],
     "system":{},
-    "batchsys": null
+    "batchsys":{
+      "condor":{
+        "requirements":"GLIDEIN_SITE != \"ComputeCanada-Cedar\""
+      }
+    }
   },
   "tasks": [
     {
@@ -72,17 +76,10 @@
           "data": [
               {
                 "compression": false,
-                "local": "muongun.i3.zst",
+                "local": "$steering(outfile)_muongun.i3.zst",
                 "movement": "output",
-                "remote": "",
+                "remote": "$steering(TARGET::muongun)/$steering(outfile)_muongun.i3.zst",
                 "type": "job_temp"
-              },
-              {
-                "compression": false,
-                "local": "norm.i3.bz2",
-                "movement": "output",
-                "remote": "$steering(TARGET::baseproc)/$sprintf(\"%s_%s_%.1fx_MuonGun.%06d.norm.i3.bz2\",$steering(GeoName),$steering(Sensor),$(EfficiencyScale),$(dataset))",
-                "type": "permanent"
               }
           ],
           "iterations": 1,
@@ -94,22 +91,24 @@
                 "gcdfile": "$steering(GCDFile)",
                 "mjd": "$steering(mjd)",
                 "nevents": "$steering(nevents)",
-                "outputfile": "muongun.i3.zst",
+                "outputfile": "$steering(outfile)_muongun.i3.zst",
                 "RNGNumberOfStreams": "$(jobs_submitted)",
                 "RNGSeed": "$steering(seed)",
                 "RNGStream": "$(job)",
                 "RunId": "$eval($(dataset)*100000 + $(job))",
                 "ToEnergy": "$steering(MuonGun::to_energy)",
-                "FromZenith": 0,
-                "ToZenith": 180
+                "FromZenith": 85,
+                "ToZenith": 95
               },
-              "classes":[],
-              "data": [],
-              "env_clear": false,
               "env_shell":"$steering(env)",
+              "env_clear": false,
               "projects":[],
-              "name": "MuonGun",
+              "classes":[],
               "parameters":{},
+              "data": [],
+              "name": "MuonGun",
+              "parameters": {
+              },
               "resources": [],
               "running_class": "icecube.gen2_sim.segments.MuonGun"
             }
@@ -143,16 +142,16 @@
           "data": [
             {
               "compression": false,
-              "local": "muongun.i3.zst",
+              "local": "$steering(outfile)_muongun.i3.zst",
               "movement": "input",
-              "remote": "",
+              "remote": "$steering(TARGET::muongun)/$steering(outfile)_muongun.i3.zst",
               "type": "job_temp"
             },
             {
               "compression": false,
-              "local": "photons.i3.zst",
+              "local": "$steering(outfile)_photons.i3.zst",
               "movement": "output",
-              "remote": "",
+              "remote": "$steering(TARGET::photons)/$steering(outfile)_photons.i3.zst",
               "type": "job_temp"
             }
           ],
@@ -163,10 +162,10 @@
                 "DisableTilt": true,
                 "gcdfile": "$steering(GCDFile1size)",
                 "inputfilelist": [
-                  "muongun.i3.zst"
+                  "$steering(outfile)_muongun.i3.zst"
                 ],
                 "nproc": "$(jobs_submitted)",
-                "outputfile": "photons.i3.zst",
+                "outputfile": "$steering(outfile)_photons.i3.zst",
                 "procnum": "$(job)",
                 "seed": "$steering(seed)",
                 "EfficiencyScale": "$max($steering(EfficiencyScales))",
@@ -198,9 +197,9 @@
       "data": [
         {
           "compression": false,
-          "local": "photons.i3.zst",
+          "local": "$steering(outfile)_photons.i3.zst",
           "movement": "input",
-          "remote": "",
+          "remote": "$steering(TARGET::photons)/$steering(outfile)_photons.i3.zst",
           "type": "job_temp"
         }
       ],
@@ -226,7 +225,7 @@
               "type": "permanent"
             }
           ],
-          "iterations": 15,
+          "iterations": 1,
           "modules": [
             {
               "args": {
@@ -234,7 +233,7 @@
                 "Sensors": ["IceCube", "$steering(Sensor)"],
                 "gcdfile": "$steering(GCDFile)",
                 "inputfilelist": [
-                  "photons.i3.zst"
+                  "$steering(outfile)_photons.i3.zst"
                 ],
                 "nproc": "$(jobs_submitted)",
                 "outputfile": "$steering(outfile)_hits.i3.bz2",
@@ -290,11 +289,11 @@
               "compression": false,
               "local": "$steering(outfile)_detsim.i3.bz2",
               "movement": "output",
-              "remote": "",
+              "remote": "$steering(TARGET::detsim)/$steering(outfile)_detsim.i3.bz2",
               "type": "job_temp"
             }
           ],
-          "iterations": 15,
+          "iterations": 1,
           "modules": [
             {
               "args": {
@@ -349,7 +348,7 @@
         {
           "classes": [],
           "data": [],
-          "iterations": 15,
+          "iterations": 1,
           "modules": [
             {
               "args": {
@@ -366,7 +365,7 @@
                   "compression": false,
                   "local": "$steering(outfile)_detsim.i3.bz2",
                   "movement": "input",
-                  "remote": "",
+                  "remote": "$steering(TARGET::detsim)/$steering(outfile)_detsim.i3.bz2",
                   "type": "job_temp"
                 },
                 {

@@ -1,1 +1,0 @@
-{"args":[],"kwargs":{"DisableTilt":true,"gcdfile":"/cvmfs/icecube.opensciencegrid.org/users/gen2-optical-sim/gcd/IceCubeHEX_Sunflower_240m_v3.2_ExtendedDepthRange.GCD.i3.bz2","inputfilelist":["muongun.i3.zst"],"nproc":1,"outputfile":"photons.i3.zst","procnum":0,"seed":61282,"EfficiencyScale":2.2,"UseGPUs":true,"DOMOversizeFactor":1}}

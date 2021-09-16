@@ -15,10 +15,14 @@ TRAINFILE=( /mnt/scratch/lehieu1/training_files/11900_regr_logE/processed/train_
 VALFILE='/mnt/scratch/lehieu1/training_files/11900_regr_logE/processed/val_file.pkl'
 TESTFILE='/mnt/scratch/lehieu1/training_files/11900_regr_logE/processed/test_file.pkl'
 
-NB_FILE=10
-NB_TRAIN=5000
-NB_VAL=500
-NB_TEST=500
+TRAINFILE=( /mnt/scratch/lehieu1/training_files/iceprod_test/090721_000000_training.pkl* )
+VALFILE='/mnt/scratch/lehieu1/training_files/iceprod_test/090721_000000_training.pkl'
+TESTFILE='/mnt/scratch/lehieu1/training_files/iceprod_test/090721_000000_training.pkl'
+
+NB_FILE=1
+NB_TRAIN=90
+NB_VAL=90
+NB_TEST=90
 
 # Experiment
 #export SLURM_TIME_FORMAT='%y%m%d'
@@ -30,7 +34,7 @@ RUN="0"
 PATIENCE=200
 NB_EPOCH=3
 LRATE=0.05
-BATCH_SIZE=32
+BATCH_SIZE=8
 REGR_MODE="energy"
 EVAL=""
 #EVAL="--evaluate"
@@ -53,7 +57,7 @@ module load powertools
 source /mnt/home/lehieu1/anaconda3/etc/profile.d/conda.sh
 conda activate /mnt/ufs18/home-105/lehieu1/load_conda_env/GNN_conda
 
-python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/gen2/multi_main.py $PYARGS
+python /mnt/home/lehieu1/IceCube/code/GNN/gnn_icecube/src/gen2_mdom/multi_main.py $PYARGS
 
 # Printing job statistics
 #js -j ${SLURM_JOB_ID}

@@ -30,18 +30,22 @@
       "GCDFile": "$steering(GCDFiles)[$steering(Sensor)]",
       "mctype": "MuonGun",
       "mjd": 57087,
-      "MuonGun::gamma": 3,
-      "MuonGun::from_energy": 1e5,
-      "MuonGun::to_energy": 1e7,
+      "MuonGun::gamma": 1.4,
+      "nevents": 100,
+      "MuonGun::from_energy": 10000,
+      "MuonGun::to_energy": 10001,
       "MuonGun::median_energy": "$eval($eval(0.5*$eval($steering(MuonGun::to_energy)**$eval(1-$steering(MuonGun::gamma))) + $eval(1-0.5)*$eval($steering(MuonGun::from_energy)**$eval(1-$steering(MuonGun::gamma))))**$eval(1./$eval(1-$steering(MuonGun::gamma))))",
       "outfile": "$sprintf('%s_%s_%.1fx_MuonGun.%06d.%06d',$steering(GeoName),$steering(Sensor),$steering(EfficiencyScale),$(dataset),$(job))",
       "priority": 0,
       "ptversion": "homogenous",
-      "env":"/cvmfs/icecube.opensciencegrid.org/py3-v4.1.1/icetray-env $steering(wd)software/icetray/build/",
+      "env":"/cvmfs/icecube.opensciencegrid.org/py3-v4.1.1/icetray-env /cvmfs/icecube.opensciencegrid.org/users/hieule/bld/",
       "seed": "$eval(1234+$(dataset)*3)",
       "subdirectory": "$sprintf('%07d-%07d',$eval($(job)//1000*1000),$eval($(job)//1000*1000+999))",
-      "TARGET::baseproc": "gsiftp://gridftp.icecube.wisc.edu/data/wipac/HEE/simulation/level2/MuonGun/$(dataset)/BaseProc/$steering(GeoName)/$steering(Sensor)/$sprintf('%.1fx',$steering(EfficiencyScale))/$steering(subdirectory)/",
-      "TARGET::hits": "gsiftp://gridftp.icecube.wisc.edu/data/wipac/HEE/simulation/MuonGun/$(dataset)/$steering(GeoName)/$steering(Sensor)/$sprintf('%.1fx',$steering(EfficiencyScale))/$steering(subdirectory)/",
+      "TARGET::baseproc": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::detsim": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::hits": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::photons": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
+      "TARGET::muongun": "gsiftp://gridftp.icecube.wisc.edu/data/user/hieule/iceprod/",
       "temp_file": "muongun",
       "weighted": "weighted",
       "year": 2025
@@ -73,9 +77,9 @@
           "data": [
               {
                 "compression": false,
-                "local": "muongun.i3.zst",
+                "local": "$steering(outfile)_muongun.i3.zst",
                 "movement": "output",
-                "remote": "",
+                "remote": "$steering(TARGET::muongun)/$steering(outfile)_muongun.i3.zst",
                 "type": "job_temp"
               }
           ],
@@ -87,15 +91,15 @@
                 "gamma": "$steering(MuonGun::gamma)",
                 "gcdfile": "$steering(GCDFile)",
                 "mjd": "$steering(mjd)",
-                "nevents": 10,
-                "outputfile": "muongun.i3.zst",
+                "nevents": "$steering(nevents)",
+                "outputfile": "$steering(outfile)_muongun.i3.zst",
                 "RNGNumberOfStreams": "$(jobs_submitted)",
                 "RNGSeed": "$steering(seed)",
                 "RNGStream": "$(job)",
                 "RunId": "$eval($(dataset)*100000 + $(job))",
                 "ToEnergy": "$steering(MuonGun::to_energy)",
-                "FromZenith": 85,
-                "ToZenith": 95
+                "FromZenith": 0,
+                "ToZenith": 180
               },
               "env_shell":"$steering(env)",
               "env_clear": false,
@@ -139,16 +143,16 @@
           "data": [
             {
               "compression": false,
-              "local": "muongun.i3.zst",
+              "local": "$steering(outfile)_muongun.i3.zst",
               "movement": "input",
-              "remote": "",
+              "remote": "$steering(TARGET::muongun)/$steering(outfile)_muongun.i3.zst"
               "type": "job_temp"
             },
             {
               "compression": false,
-              "local": "photons.i3.zst",
+              "local": "$steering(outfile)_photons.i3.zst",
               "movement": "output",
-              "remote": "",
+              "remote": "$steering(TARGET::photons)/$steering(outfile)_photons.i3.zst",
               "type": "job_temp"
             }
           ],
@@ -159,10 +163,10 @@
                 "DisableTilt": true,
                 "gcdfile": "$steering(GCDFile1size)",
                 "inputfilelist": [
-                  "muongun.i3.zst"
+                  "$steering(outfile)_muongun.i3.zst"
                 ],
                 "nproc": "$(jobs_submitted)",
-                "outputfile": "photons.i3.zst",
+                "outputfile": "$steering(outfile)_photons.i3.zst",
                 "procnum": "$(job)",
                 "seed": "$steering(seed)",
                 "EfficiencyScale": "$max($steering(EfficiencyScales))",
@@ -194,9 +198,9 @@
       "data": [
         {
           "compression": false,
-          "local": "photons.i3.zst",
+          "local": "$steering(outfile)_photons.i3.zst",
           "movement": "input",
-          "remote": "",
+          "remote": "$steering(TARGET::photons)/$steering(outfile)_photons.i3.zst",
           "type": "job_temp"
         }
       ],
@@ -230,7 +234,7 @@
                 "Sensors": ["IceCube", "$steering(Sensor)"],
                 "gcdfile": "$steering(GCDFile)",
                 "inputfilelist": [
-                  "photons.i3.zst"
+                  "$steering(outfile)_photons.i3.zst"
                 ],
                 "nproc": "$(jobs_submitted)",
                 "outputfile": "$steering(outfile)_hits.i3.bz2",
@@ -247,139 +251,6 @@
               },
               "resources": [],
               "running_class": "icecube.gen2_sim.segments.DownsamplePEs"
-            }
-          ],
-          "name": "",
-          "parameters": {
-          },
-          "resources": []
-        }
-      ]
-    },
-    {
-      "batchsys": null,
-      "classes": [
-      ],
-      "data": [],
-      "depends": [
-        "hits"
-      ],
-      "name": "detector",
-      "parameters": {
-      },
-      "requirements": {
-        "memory": 8
-      },
-      "resources": [],
-      "trays": [
-        {
-          "classes": [],
-          "data": [
-            {
-              "compression": false,
-              "local": "$steering(outfile)_hits.i3.bz2",
-              "movement": "input",
-              "remote": "$steering(TARGET::hits)/$steering(outfile)_hits.i3.bz2",
-              "type": "permanent"
-            },
-            {
-              "compression": false,
-              "local": "$steering(outfile)_detsim.i3.bz2",
-              "movement": "output",
-              "remote": "",
-              "type": "job_temp"
-            }
-          ],
-          "iterations": 1,
-          "modules": [
-            {
-              "args": {
-                "gcdfile": "$steering(GCDFile)",
-                "inputfilelist": [
-                  "$steering(outfile)_hits.i3.bz2"
-                ],
-                "outputfile": "$steering(outfile)_detsim.i3.bz2",
-                "nproc": "$(jobs_submitted)",
-                "seed": "$steering(seed)",
-                "procnum": "$(job)",
-                "RunId": "$(job)",
-                "pregeneratedmDOM": true,
-                "ZeroHitFilter":true,
-                "Sensors": ["IceCube", "$steering(Sensor)"],
-                "InputMCPESeriesMaps":["I3MCPESeriesMap_IceCube", "I3MCPESeriesMap_$steering(Sensor)"]
-              },
-              "classes": [],
-              "data": [],
-              "env_clear": false,
-              "env_shell": "$steering(env)",
-              "name": "MakePEFromPhotons",
-              "parameters": {
-              },
-              "resources": [],
-              "running_class": "icecube.gen2_sim.segments.DetectorSimulation"
-            }
-          ],
-          "name": "",
-          "parameters": {
-          },
-          "resources": []
-        }
-      ]
-    },
-    {
-      "batchsys": null,
-      "classes": [
-      ],
-      "data": [],
-      "depends": [
-        "detector"
-      ],
-      "name": "baseproc",
-      "parameters": {
-      },
-      "requirements": {
-        "memory": 4
-      },
-      "resources": [],
-      "trays": [
-        {
-          "classes": [],
-          "data": [],
-          "iterations": 1,
-          "modules": [
-            {
-              "args": {
-                "gcdfile": "$steering(GCDFile)",
-                "inputfilelist": [
-                  "$steering(outfile)_detsim.i3.bz2"
-                ],
-                "outputfile": "$steering(outfile)_baseproc.i3.bz2"
-              },
-              "classes": [
-              ],
-              "data": [
-                {
-                  "compression": false,
-                  "local": "$steering(outfile)_detsim.i3.bz2",
-                  "movement": "input",
-                  "remote": "",
-                  "type": "job_temp"
-                },
-                {
-                  "compression": false,
-                  "local": "$steering(outfile)_baseproc.i3.bz2",
-                  "movement": "output",
-                  "remote": "$steering(TARGET::baseproc)/$steering(outfile)_baseproc.i3.bz2",
-                  "type": "permanent"
-                }
-              ],
-              "env_clear": false,
-              "env_shell": "$steering(env)",
-              "name": "baseproc",
-              "parameters": {
-              },
-              "resources": [],
-              "running_class": "icecube.gen2_sim.segments.BaseProcessing"
             }
           ],
           "name": "",
