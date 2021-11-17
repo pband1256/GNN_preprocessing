@@ -3,11 +3,9 @@ import numpy as np
 import pandas as pd
 #from sklearn.utils import shuffle
 
-with open('/mnt/scratch/lehieu1/training_files/iceprod_test/090721_000000_training.pkl','rb') as f:
-    X,y,w,e,f,E,r = pickle.load(f)
-    X = pd.DataFrame(X)
-    y = pd.DataFrame(y)
+with open('/mnt/home/lehieu1/IceCube/plot/iceprod/11900_hist.pkl','rb') as f:
+    data = pickle.load(f)
 
-print(X)
-print(y)
-
+print(data)
+print(data.keys())
+print(np.shape(data['true_zenith']))

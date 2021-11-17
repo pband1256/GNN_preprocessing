@@ -102,7 +102,7 @@ class Gaussian(nn.Module):
   '''
   def __init__(self, spatial_coords=None):
     super(Gaussian, self).__init__()
-    self.sigma = nn.Parameter(torch.rand(1) * 0.02 + 0.99)
+    self.sigma = nn.Parameter(torch.rand(1) * 4 + 480 - 2)
     self.spatial_coords = spatial_coords
 
   def _apply_norm_and_mask(self, adj, mask):

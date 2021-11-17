@@ -39,21 +39,15 @@ def read_args():
   Parse stdin arguments
   '''
 
-  def nullable_string(string):
-    if string in ['None', '']:
-      return None
-    return string
-
-  parser = argparse.ArgumentParser(description='Arguments for GNN model and experiment')
+  parser = argparse.ArgumentParser(description=
+                      'Arguments for GNN model and experiment')
   add_arg = parser.add_argument
 
   # Experiment
   add_arg('--name', help='Experiment reference name', required=True)
   add_arg('--run', help='Experiment run number', default=0)
-  #add_arg('--eval_tpr',help='FPR at which TPR will be evaluated', default=0.000003)
-  add_arg('--evaluate', help='Model file name, perform evaluation on test set only',
-          default=None, type=nullable_string)
-  #action='store_true')
+  add_arg('--eval_tpr',help='FPR at which TPR will be evaluated', default=0.000003)
+  add_arg('--evaluate', help='Perform evaluation on test set only',action='store_true')
   add_arg('--regr_mode', help='Regression quantity (energy vs. direction)',default='energy')
 
   # Training
@@ -66,7 +60,6 @@ def read_args():
   add_arg('--train_file', help='List of paths to train pickle file',type=str,nargs='+',default=[None])
   add_arg('--val_file',   help='Path to val   pickle file',type=str,default=None)
   add_arg('--test_file',  help='Path to test  pickle file',type=str,default=None)
-  add_arg('--old_reco_file', help='Path to old recon dict pickle file',type=nullable_string, default=None)
   add_arg('--nb_train', help='Number of training samples', type=int, default=10)
   add_arg('--nb_val', help='Number of validation samples', type=int, default=10)
   add_arg('--nb_test', help='Number of test samples', type=int, default=10)
@@ -180,7 +173,7 @@ def save_current_model(experiment_dir, net, epoch):
   '''
   Optionally called after each epoch to save current model.
   '''
-  model_path = os.path.join(experiment_dir, "models", "model_epoch_{:02}.pkl".format(epoch))
+  model_path = os.path.join(experiment_dir, "models", "model_epoch_{}.pkl".format(epoch))
   save_model(net, model_path)
 
 def load_args(experiment_dir):
@@ -218,84 +211,8 @@ def update_best_plots(experiment_dir):
       new_name = os.path.join(experiment_dir, "best_"+f)
       os.rename(old_name, new_name)
 
-##########################
-###                    ###
-###    Brian's code    ###
-###                    ###
-##########################
+def plot_reg_hist(true_y, pred_y, experiment_dir, plot_name='reg_hist', regr_mode='energy'):
 
-def find_contours_2D(x_values,y_values,xbins,weights=None,c1=16,c2=84):   
-        """
-        Find upper and lower contours and median
-        x_values = array, input for hist2d for x axis (typically truth)
-        y_values = array, input for hist2d for y axis (typically reconstruction)
-        xbins = values for the starting edge of the x bins (output from hist2d)
-        c1 = percentage for lower contour bound (16% - 84% means a 68% band, so c1 = 16)
-        c2 = percentage for upper contour bound (16% - 84% means a 68% band, so c2=84)
-        Returns:
-                x = values for xbins, repeated for plotting (i.e. [0,0,1,1,2,2,...]
-                y_median = values for y value medians per bin, repeated for plotting (i.e. [40,40,20,20,50,50,...]
-                y_lower = values for y value lower limits per bin, repeated for plotting (i.e. [30,30,10,10,20,20,...]
-                y_upper = values for y value upper limits per bin, repeated for plotting (i.e. [50,50,40,40,60,60,...]
-        """
-        if weights is not None:
-                import wquantiles as wq
-        y_values = np.array(y_values)
-        indices = np.digitize(x_values, xbins)
-        r1_save = []
-        r2_save = []
-        median_save = []
-        for i in range(1,len(xbins)):
-                mask = indices==i
-                if len(y_values[mask])>0:
-                        if weights is None:
-                                r1, m, r2 = np.percentile(y_values[mask],[c1,50,c2])
-                        else:
-                                r1 = wq.quantile(y_values[mask],weights[mask],c1/100.)
-                                r2 = wq.quantile(y_values[mask],weights[mask],c2/100.)
-                                m = wq.median(y_values[mask],weights[mask])
-                else:
-                        #print(i,'empty bin')
-                        r1 = np.nan
-                        m = np.nan
-                        r2 = np.nan
-                median_save.append(m)
-                r1_save.append(r1)
-                r2_save.append(r2)
-        median = np.array(median_save)
-        lower = np.array(r1_save)
-        upper = np.array(r2_save)
-
-        # the first return with the [1:] and [:-1] is about locating the bin centers
-        return (xbins[1:] + xbins[:-1])/2, median, lower, upper
-
-def regr_sanitize(data, regr_mode, log=False):
-  if regr_mode == 'energy':
-    if log == True and np.mean(data) <= 20:
-      return data
-    elif log == True and np.mean(data) > 20:
-      return np.log10(data)
-    else:
-      return 10**data
-  if regr_mode == 'zenith':
-    if np.mean(data) >= 7:
-      data = np.deg2rad(data)
-    return np.cos(data)
-  if regr_mode == 'azimuth':
-    if np.mean(data) < 7:
-      return np.rad2deg(data)
-    else:
-      return data
-
-def plot_reg_hist(x, y, experiment_dir, n_bins=100, plot_name='reg_hist', regr_mode='energy'):
-  '''
-  Regression: energy, zenith, azimuth
-  Input:
-    energy: log10(E)
-    zenith: radians
-    azimuth: radians
-  '''
-  font = 30
   # Plotting
   plt.clf()
   nullfmt = NullFormatter()
@@ -308,7 +225,7 @@ def plot_reg_hist(x, y, experiment_dir, n_bins=100, plot_name='reg_hist', regr_m
   rect_histx = [left, bottom_h, width, 0.2]
   rect_histy = [left_h, bottom, 0.2, height]
   # start with a rectangular Figure
-  plt.figure(figsize=(16, 14))
+  plt.figure(figsize=(8, 7))
   axHist  = plt.axes(rect_hist)
   axHistx = plt.axes(rect_histx)
   axHisty = plt.axes(rect_histy)
@@ -317,57 +234,32 @@ def plot_reg_hist(x, y, experiment_dir, n_bins=100, plot_name='reg_hist', regr_m
   axHisty.yaxis.set_major_formatter(nullfmt)
 
   # the scatter plot:
-
-  # 2D histogram of pred vs. truth
+  hist_min = np.min(np.concatenate((true_y,pred_y)))
+  hist_max = np.max(np.concatenate((true_y,pred_y)))
   if regr_mode == 'energy':
-    hist_min = min(np.min(x), np.min(y))
-    hist_max = max(np.max(x), np.max(y))
-    #hist_min = 2
-    #hist_max = 8
-    x = 10**x
-    y = 10**y
-    bins = np.logspace(hist_min, hist_max, n_bins)
-    im = axHist.hist2d(x, y, norm=colors.LogNorm(), bins=(bins,bins))
-  elif regr_mode in ['zenith','azimuth']:
-    if regr_mode == 'zenith':
-      x = np.cos(x)
-      y = np.cos(y)
-    hist_min = min(np.min(x), np.min(y))
-    hist_max = max(np.max(x), np.max(y))
-    bins = np.linspace(hist_min, hist_max, n_bins)
-    im = axHist.hist2d(x, y, bins=(bins,bins))
+    true_y = 10**true_y
+    pred_y = 10**pred_y
+    bins = np.logspace(hist_min, hist_max, 100)
+    im = axHist.hist2d(pred_y, true_y, norm=colors.LogNorm(), bins=(bins,bins))
+  elif regr_mode in ['zenith','azimuth','x','y','z']:
+    bins = np.linspace(hist_min, hist_max, 100)
+    im = axHist.hist2d(pred_y, true_y, bins=(bins,bins))
   else:
     print('Regression mode unspecified, no histogram generated.')
     return
 
-  # Finding and plotting contours
-  x_range, y_median, y_lower, y_upper = find_contours_2D(x, y, bins)
-  axHist.plot(x_range, y_median, 'r', linewidth=4, label="median")
-  axHist.plot(x_range, y_upper, 'r--', linewidth=4, label=r"$1\sigma$")
-  axHist.plot(x_range, y_lower, 'r--', linewidth=4)
-  axHist.plot(bins, bins, 'k', label='1-1', linewidth=4)
-  axHist.legend(fontsize=font)
+  axHist.plot(bins, bins, color='r')
 
   # now determine nice limits by hand:
   axHistx.set_xlim(axHist.get_xlim())
   axHisty.set_ylim(axHist.get_ylim())
 
-  axHistx.hist(x, bins=bins)
-  axHisty.hist(y, bins=bins, orientation='horizontal')
+  axHistx.hist(pred_y, bins=bins)
+  axHisty.hist(true_y, bins=bins, orientation='horizontal')
 
   # Style
-  if regr_mode == 'energy':
-      axHist.set_ylabel(r"$E_{\mu, reco}$ [GeV]", fontsize=font)
-      axHist.set_xlabel(r"$E_{\mu, truth}$ [GeV]", fontsize=font)
-  elif regr_mode == 'zenith':
-      axHist.set_ylabel(r"$\cos \theta_{\mu, reco}$", fontsize=font)
-      axHist.set_xlabel(r"$\cos \theta_{\mu, truth}$", fontsize=font)
-  elif regr_mode == 'azimuth':
-      axHist.set_ylabel(r"$\phi_{\mu, reco}$ [rad]", fontsize=font)
-      axHist.set_xlabel(r"$\phi_{\mu, truth}$ [rad]", fontsize=font)
-  axHist.tick_params(axis='both', labelsize=font)
-  axHistx.tick_params(axis='both', labelsize=font)
-  axHisty.tick_params(axis='both', labelsize=font)
+  axHist.set_xlabel("Prediction")
+  axHist.set_ylabel("Truth")
   axHistx.tick_params(labelbottom=False)
   axHisty.tick_params(labelleft=False)
   if regr_mode == 'energy':
@@ -377,45 +269,38 @@ def plot_reg_hist(x, y, experiment_dir, n_bins=100, plot_name='reg_hist', regr_m
     axHistx.set_yscale('log')
     axHisty.set_xscale('log')
     axHisty.set_yscale('log')
-  plt.suptitle("Prediction histogram ("+regr_mode+")", fontsize=font)
+  plt.suptitle("Prediction histogram ("+regr_mode+")")
 
   divider = make_axes_locatable(axHisty)
   cax = divider.append_axes('right', size='10%', pad=0.1)
-  cbar = plt.colorbar(im[3], cax=cax)
-  cbar.ax.tick_params(labelsize=font)
-  cbar.ax.get_yaxis().labelpad = 25
-  cbar.ax.set_ylabel('Counts', rotation=270, fontsize=font)
-  #plt.tight_layout()
+  plt.colorbar(im[3], cax=cax)
 
   #Save
   plotfile = os.path.join(experiment_dir, "plots", '{}_{}.png'.format(plot_name, regr_mode))
-  plt.savefig(plotfile, bbox_inches='tight', pad_inches=0.1)
+  plt.savefig(plotfile)
   plt.clf()
 
 def plot_loss(train_loss, val_loss, epoch, experiment_dir, plot_name="LossProgress"):
-    font = 20
     plt.figure(figsize=(10,7))
     plt.plot(epoch, train_loss, label="Training")
     plt.plot(epoch, val_loss, label="Validation")
-    plt.tick_params(axis='both', labelsize=font)
 
-    plt.xlabel("Epoch", fontsize=font)
-    plt.ylabel("Loss", fontsize=font)
-    plt.legend(fontsize=font)
-    plt.tight_layout()
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
 
     plt.savefig(os.path.join(experiment_dir, "plots", '{}.png'.format(plot_name)))
 
 ###########################
-###                     ###
-###    Jessie's code    ###
-###                     ###
+######               ######
+###### Jessie's code ######
+######               ######
 ###########################
 
-def plot_energy_slices(truth, nn_reco, en, regr_mode='energy',\
-                       use_fraction = False, old_reco=None, old_truth=None, old_en=None,\
+def plot_energy_slices(truth, nn_reco, regr_mode='energy',\
+                       use_fraction = False, old_reco=None, old_truth=None,\
                        bins=20,minenergy=3000.,maxenergy=300000.,\
-                       savefolder=None, specification=None):
+                       savefolder=None):
     """Plots different energy slices vs each other (systematic set arrays)
     Receives:
         truth= array with truth labels
@@ -433,44 +318,37 @@ def plot_energy_slices(truth, nn_reco, en, regr_mode='energy',\
         Scatter plot with energy values on x axis (median of bin width)
         y axis has median of resolution with error bars containing 68% of resolution
     """
+    use_old_reco = not (old_reco is None)
 
-    font = 30
-    if regr_mode == 'zenith':
-        truth = np.cos(truth)
-        nn_reco = np.cos(nn_reco)
-        if old_reco is not None:
-            old_reco = np.cos(old_reco)
-            old_truth = np.cos(old_truth)
-
-    if use_fraction == True:
-        if regr_mode == 'energy':
-            resolution = (10**nn_reco-10**truth)/10**truth
-        else:
-            resolution = (nn_reco-truth)/np.abs(truth)
+    if (use_old_reco == True) and (old_truth is None):
+        old_truth = truth
+    print(np.shape(truth), np.shape(old_truth), np.shape(nn_reco), np.shape(old_reco))
+    if use_fraction:
+        resolution = ((nn_reco-truth)/truth) # in fraction
     else:
-        resolution = nn_reco-truth
+        resolution = (nn_reco-truth)
     percentile_in_peak = 68.27
     left_tail_percentile  = (100.-percentile_in_peak)/2
     right_tail_percentile = 100.-left_tail_percentile
     energy_ranges  = np.linspace(minenergy,maxenergy, num=bins)
     energy_centers = (energy_ranges[1:] + energy_ranges[:-1])/2.
-
-    medians  = np.zeros(len(energy_centers)); err_from = np.zeros(len(energy_centers)); err_to   = np.zeros(len(energy_centers))
-    if old_reco is not None:
+    medians  = np.zeros(len(energy_centers))
+    err_from = np.zeros(len(energy_centers))
+    err_to   = np.zeros(len(energy_centers))
+    if use_old_reco:
         if use_fraction:
-            if regr_mode == 'energy':
-                resolution_reco = (10**old_reco-10**old_truth)/10**old_truth
-            else:
-                resolution_reco = (old_reco-old_truth)/np.abs(old_truth)
+            resolution_reco = ((old_reco-old_truth)/old_truth)
         else:
-            resolution_reco = old_reco-old_truth
-        medians_reco  = np.zeros(len(energy_centers)); err_from_reco = np.zeros(len(energy_centers)); err_to_reco   = np.zeros(len(energy_centers))
+            resolution_reco = (old_reco-old_truth)
+        medians_reco  = np.zeros(len(energy_centers))
+        err_from_reco = np.zeros(len(energy_centers))
+        err_to_reco   = np.zeros(len(energy_centers))
     for i in range(len(energy_ranges)-1):
         en_from = energy_ranges[i]
         en_to   = energy_ranges[i+1]
 
         # New reco section
-        cut = (en >= en_from) & (en < en_to)
+        cut = (truth >= en_from) & (truth < en_to)
         if np.size(resolution[cut]) == 0:
             lower_lim = float('nan')    
             upper_lim = float('nan')
@@ -485,61 +363,40 @@ def plot_energy_slices(truth, nn_reco, en, regr_mode='energy',\
         err_to[i] = upper_lim
 
         # Old reco section
-        if old_reco is not None:
-            cut = (old_en >= en_from) & (old_en < en_to)
+        if use_old_reco:
+            cut = (old_truth >= en_from) & (old_truth < en_to)
             if np.size(resolution_reco[cut]) == 0:
                 lower_lim_reco = float('nan')
                 upper_lim_reco = float('nan')
                 median_reco = float('nan')
             else:
-                lower_lim_reco = np.nanpercentile(resolution_reco[cut], left_tail_percentile)
-                upper_lim_reco = np.nanpercentile(resolution_reco[cut], right_tail_percentile)
-                median_reco = np.nanpercentile(resolution_reco[cut], 50.)
+                lower_lim_reco = np.percentile(resolution_reco[cut], left_tail_percentile)
+                upper_lim_reco = np.percentile(resolution_reco[cut], right_tail_percentile)
+                median_reco = np.percentile(resolution_reco[cut], 50.)
+            
             medians_reco[i] = median_reco
             err_from_reco[i] = lower_lim_reco
             err_to_reco[i] = upper_lim_reco
-    plt.figure(figsize=(15,10.5))
-    plt.plot(energy_centers, medians, color='C0', alpha=1, label='GNN Reco')
-    plt.fill_between(energy_centers, medians, err_to, color='C0', alpha=0.2, label='GNN 68%')
-    plt.fill_between(energy_centers, medians, err_from, color='C0', alpha=0.2)
-
-    if old_reco is not None:
-        plt.plot(energy_centers, medians_reco, color='C1', alpha=1, label='SplineMPE/MuEX Reco')
-        plt.fill_between(energy_centers, medians_reco, err_to_reco, color='C1', alpha=0.2, label='SplineMPE/MuEX 68%')
-        plt.fill_between(energy_centers, medians_reco, err_from_reco, color='C1', alpha=0.2)
-        plt.legend(fontsize=font)
+    plt.figure(figsize=(10,7))
+    plt.errorbar(energy_centers, medians, yerr=[medians-err_from, err_to-medians], xerr=[ energy_centers-energy_ranges[:-1], energy_ranges[1:]-energy_centers ], capsize=5.0, fmt='o',label="NN Reco")
+    if use_old_reco:
+        plt.errorbar(energy_centers, medians_reco, yerr=[medians_reco-err_from_reco, err_to_reco-medians_reco], xerr=[ energy_centers-energy_ranges[:-1], energy_ranges[1:]-energy_centers ], capsize=5.0, fmt='o',label="SplineMPE Reco")
+        plt.legend(loc="upper center")
     plt.plot([minenergy,maxenergy], [0,0], color='k')
-
     plt.xlim(minenergy,maxenergy)
-    #plt.ticklabel_format(axis="both", style="sci", scilimits=(-2,2))
-    plt.xlabel(r"$\log_{10} E_\mu$ [GeV]", fontsize=font)
-    if regr_mode == 'energy':
-        if use_fraction:
-            plt.ylabel("Fractional resolution ("+regr_mode+")\n (reco - truth)/truth ($\Delta E_{\mu}/E_{\mu}$)", fontsize=font)
-        else:
-            plt.ylabel(r"Resolution ("+regr_mode+")\n reco - truth ($\Delta \log_{10} E_{\mu}$ [GeV])", fontsize=font)
-    elif regr_mode == 'zenith':
-        if use_fraction:
-            plt.ylabel("Fractional resolution ("+regr_mode+")\n (reco - truth)/truth ($\Delta \cos \\theta_{\mu}/|\cos \\theta_{\mu}|$)", fontsize=font)
-        else:
-            plt.ylabel(r"Resolution ("+regr_mode+")\n reco - truth ($\Delta \cos \\theta_{\mu}$)", fontsize=font)
-    elif regr_mode == 'azimuth':
-        if use_fraction:
-            plt.ylabel("Fractional resolution ("+regr_mode+")\n (reco - truth)/truth ($\Delta \phi_{\mu}/\phi_{\mu}$)", fontsize=font)
-        else:
-            plt.ylabel(r"Resolution ("+regr_mode+")\n reco - truth ($\Delta \phi_{\mu}$ [rad])", fontsize=font)
-
-    plt.tick_params(axis='both', labelsize=font)
-    plt.title("Resolution energy dependence", y=1.08, fontsize=font)
-    if specification is not None:
-        regr_mode = regr_mode + "_" + specification
-    savename = "EnergyResolutionSlices_" + regr_mode
+    plt.xlabel("Energy range (log GeV)")
+    plt.ticklabel_format(axis="both", style="sci", scilimits=(-2,2))
+    if use_fraction:
+        plt.ylabel("Fractional resolution ("+regr_mode+")\n (reco - truth)/truth")
+    else:
+        plt.ylabel("Resolution ("+regr_mode+")\n reco - truth (log GeV)")
+    plt.title("Resolution energy dependence")
+    savename = "EnergyResolutionSlices_"+regr_mode
     if use_fraction:
         savename += "_Frac"
-    if old_reco is not None:
+    if use_old_reco:
         savename += "_CompareOldReco"
     if savefolder != None:
-        plt.tight_layout()
         plt.savefig(os.path.join(savefolder, "plots", '{}.png'.format(savename)))
 
 def track_epoch_stats(epoch, lrate, train_loss, train_stats, val_stats, experiment_dir):

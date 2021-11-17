@@ -2,6 +2,8 @@ import os
 import time
 import logging
 import numpy as np
+import pandas as pd
+import pickle
 
 import torch
 import torch.nn as nn
@@ -72,9 +74,11 @@ def train(
           valid_loader
           ):
   optimizer = torch.optim.Adamax(net.parameters(), lr=args.lrate)
-  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=args.patience)
+  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=args.patience)
   # Nb epochs completed tracked in case training interrupted
   for i in range(args.nb_epochs_complete, args.nb_epoch):
+    nb_files = len(args.train_file)
+    epoch = i // nb_files
     # Update learning rate in optimizer
     t0 = time.time()
     logging.info("\nEpoch {}".format(i+1))
@@ -93,7 +97,7 @@ def train(
     if (((i+1) % len(multi_train_loader)) == 0):
       val_stats = evaluate(net, criterion, experiment_dir, args,
                             valid_loader, 'Valid')                          
-      utils.track_epoch_stats(i/len(args.train_file), args.lrate, 0, train_stats, val_stats, experiment_dir)
+      utils.track_epoch_stats(epoch, args.lrate, 0, train_stats, val_stats, experiment_dir)
 
       # Update learning rate, remaining nb epochs to train
       scheduler.step(val_stats)
@@ -101,25 +105,24 @@ def train(
       # Track best model performance
       if (val_stats < args.best_loss):
         logging.warning("Best performance on valid set.")
-        nb_files = len(args.train_file)
         args.best_loss = float(val_stats)
-        utils.plot_loss(train_stats, val_stats, i//nb_files, experiment_dir)
         utils.update_best_plots(experiment_dir)
         utils.save_best_model(experiment_dir, net)
-        utils.save_best_scores(i/nb_files, val_stats, experiment_dir)
-        utils.save_epoch_model(experiment_dir, net)
+        utils.save_best_scores(epoch, val_stats, experiment_dir)
+        best_epoch = epoch
 
     args.lrate = optimizer.param_groups[0]['lr']
     args.nb_epochs_complete += 1
 
     utils.save_args(experiment_dir, args)
+    utils.save_current_model(experiment_dir, net, epoch)
     logging.info("Epoch took {} seconds.".format(int(time.time()-t0)))
     
     if args.lrate < 10**-4:
         logging.warning("Minimum learning rate reached.")
         break
 
-  logging.warning("Training completed.")
+  logging.warning("Training completed. Best model performance on epoch {}.".format(best_epoch))
 
 
 def evaluate(net,
@@ -139,16 +142,12 @@ def evaluate(net,
     evt_id = []
     f_name = []
     E_name = []
-    r_name = []
     logging.info("Evaluating {} {} samples.".format(nb_eval,plot_name))
     with torch.autograd.no_grad():
         for i, batch in enumerate(valid_loader):
-            X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names, energy, reco = batch
+            X, y, w, adj_mask, batch_nb_nodes, evt_ids, evt_names, energy, _ = batch
             # Pick corresponding labels
             y = y[:,INDEX:INDEX+output_dim]
-            # Remove one-hot encoding
-            #y_org = y.to(device)
-            #y = np.argmax(y,axis=1).long()
             X, y, w, adj_mask, batch_nb_nodes = X.to(device), y.to(device), w.to(device), adj_mask.to(device), batch_nb_nodes.to(device)
             out = net(X, adj_mask, batch_nb_nodes)
 
@@ -159,11 +158,10 @@ def evaluate(net,
             end = (i+1) * args.batch_size
             pred_y[beg:end,:] = out.data.cpu().numpy()
             true_y[beg:end,:] = y.data.cpu().numpy()
-            if plot_name==TEST_NAME:
-                evt_id.extend(evt_ids)
-                f_name.extend(evt_names)
-                E_name.extend(energy)
-                r_name.extend(reco)
+            #if plot_name==TEST_NAME:
+            evt_id.extend(evt_ids)
+            f_name.extend(evt_names)
+            E_name.extend(energy)
 
             # Print running loss 2 times 
             if (((i+1) % (nb_batches//2)) == 0):
@@ -175,28 +173,86 @@ def evaluate(net,
     logging.info("{}: loss {:>.3E}".format(plot_name, epoch_loss))
 
     if plot_name == TEST_NAME:
-        E_min = np.min(E_name)
-        E_max = np.max(E_name) 
+        if args.old_reco_file is not None:
+            # Load old reco dictionary
+            with open(args.old_reco_file, "rb") as input_file:
+                reco_dict = pickle.load(input_file)
+        else:
+            # Initialize empty dictionary
+            reco_dict = dict.fromkeys(["true_zenith", "true_azimuth", "true_energy",
+                                       "reco_zenith", "reco_azimuth", "reco_energy"])
         # Resolution plot
-        '''
         if args.regr_mode == 'direction':
-            utils.plot_energy_slices(true_y[:,0], pred_y[:,0], regr_mode='zenith', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
-            utils.plot_energy_slices(true_y[:,1], pred_y[:,1], regr_mode='azimuth', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
-        elif args.regr_mode == 'direction_cart':
-            utils.plot_energy_slices(true_y[:,0], pred_y[:,0], regr_mode='x', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
-            utils.plot_energy_slices(true_y[:,1], pred_y[:,1], regr_mode='y', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
-            utils.plot_energy_slices(true_y[:,2], pred_y[:,2], regr_mode='z', use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
+            regr_mode = ['zenith','azimuth']
+            #################################################################################
+            #   Make sure to implement cosine zenith into the inc. data file itself later   #
+            #   (unless training on actual zenith is better)                                #
+            #################################################################################
+            if args.old_reco_file is not None:
+                r_pred = np.array([reco_dict['reco_zenith'], reco_dict['reco_azimuth']]).transpose()
+                r_truth = np.array([reco_dict['true_zenith'], reco_dict['true_azimuth']]).transpose()
+                r_en = reco_dict['true_energy']
+            #################################################################################
         elif args.regr_mode == 'energy':
-            utils.plot_energy_slices(true_y, pred_y, regr_mode='energy', use_fraction=True, old_reco=r_name, bins=20, minenergy=E_min, maxenergy=E_max, savefolder=experiment_dir)
-        '''
-        utils.plot_reg_hist(true_y, pred_y, experiment_dir, regr_mode=args.regr_mode)
+            regr_mode = ['energy']
+            r_pred = np.expand_dims(reco_dict['reco_energy'], axis=1)
+            r_truth = np.expand_dims(reco_dict['true_energy'], axis=1)
+            r_en = reco_dict['true_energy']
+
+        E_min = np.log10(np.min(E_name))
+        E_max = np.log10(np.max(E_name))
+        E_ar = np.log10(E_name)
+
+        for i in range(len(regr_mode)):
+            utils.plot_reg_hist(x=true_y[:,i], y=pred_y[:,i], experiment_dir=experiment_dir, n_bins=100, 
+                                plot_name='GNN_reg_hist', regr_mode=regr_mode[i])
+            if args.old_reco_file is not None:
+                utils.plot_reg_hist(x=r_truth[:,i], y=r_pred[:,i], experiment_dir=experiment_dir, n_bins=100, 
+                                plot_name='SplineMPE_hist', regr_mode=regr_mode[i])
+                utils.plot_energy_slices(true_y[:,i], pred_y[:,i], en=E_ar, regr_mode=regr_mode[i], 
+                                     use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, 
+                                     savefolder=experiment_dir, 
+                                     old_reco=r_pred[:,i], old_truth=r_truth[:,i], old_en=r_en)
+                utils.plot_energy_slices(true_y[:,i], pred_y[:,i], en=E_ar, regr_mode=regr_mode[i], 
+                                     use_fraction=False, bins=20, minenergy=E_min, maxenergy=E_max, 
+                                     savefolder=experiment_dir, 
+                                     old_reco=r_pred[:,i], old_truth=r_truth[:,i], old_en=r_en)
+            else:    
+                utils.plot_energy_slices(true_y[:,i], pred_y[:,i], en=E_ar, regr_mode=regr_mode[i], 
+                                     use_fraction=True, bins=20, minenergy=E_min, maxenergy=E_max, 
+                                     savefolder=experiment_dir)
+                utils.plot_energy_slices(true_y[:,i], pred_y[:,i], en=E_ar, regr_mode=regr_mode[i], 
+                                     use_fraction=False, bins=20, minenergy=E_min, maxenergy=E_max, 
+                                     savefolder=experiment_dir)
+
+
+        def load_data(filename, labels):
+            data  = pd.read_csv(filename)
+            arrays = []
+            for label in labels:
+                if pd.api.types.is_string_dtype(data[label]):
+                    symbols = "['!\"#$%&()*/:;<=>?@[\]^_`{|}~\n]"
+                    array = np.array(data[label].str.replace(symbols, ""))
+
+                    # Convert to ndarray
+                    array = np.array([
+                                    np.fromstring(j, dtype=np.float, sep=' ') for j in array
+                                    ]).squeeze()
+                else:
+                    array = np.array(data[label])
+                arrays.append(array)
+            return arrays
+        # Plot loss curve using imported loss history
+        train_stats = load_data(experiment_dir+'/training_stats.csv',['train_loss','val_loss','Epoch'])
+        utils.plot_loss(train_stats[0], train_stats[1], train_stats[2], experiment_dir)
+
         utils.save_test_scores(nb_eval, epoch_loss, experiment_dir)
         utils.save_preds(evt_id, f_name, E_name, pred_y, true_y, experiment_dir)
     return (epoch_loss)
 
 
 def main():
-  input_dim = 9
+  input_dim = 10
   spatial_dim = [0,1,2]
   args = utils.read_args()
 
@@ -211,10 +267,6 @@ def main():
   elif args.regr_mode == 'direction':
       output_dim = 2
       INDEX = 1
-  # Output: x, y, z
-  elif args.regr_mode == 'direction_cart':
-      output_dim = 3
-      INDEX = 3
   else:
       assert True, 'Regression quantity not defined'
 
@@ -225,7 +277,7 @@ def main():
 
   # Optionally restore arguments from previous training
   # Useful if training is interrupted
-  if not args.evaluate:
+  if args.evaluate is None:
     try:
       args = utils.load_args(experiment_dir)
     except:
@@ -254,7 +306,7 @@ def main():
 
   # Multiclass loss function
   criterion = nn.MSELoss()  #CrossEntropyLoss()
-  if not args.evaluate:
+  if args.evaluate is None:
     assert (args.train_file != None)
     assert (args.val_file   != None)
     multi_train_loader = []
@@ -282,11 +334,17 @@ def main():
          )
 
   # Perform evaluation over test set
-  try:
-    net = utils.load_best_model(experiment_dir)
-    logging.warning("\nBest model loaded for evaluation on test set.")
-  except:
-    logging.warning("\nCould not load best model for test set. Using current.")
+  if args.evaluate is None:
+    try:
+      net = utils.load_best_model(experiment_dir)
+      logging.warning("\nBest model loaded for evaluation on test set.")
+    except:
+      logging.warning("\nCould not load best model for test set. Using current.")
+  else:
+    net_path = os.path.join(experiment_dir, 'models', args.evaluate)
+    logging.warning("\nEvaluating using model file {}".format(args.evaluate))
+    net = utils.load_model(net_path)
+
   assert (args.test_file != None)
   test_loader = construct_loader(args.test_file,
                                  args.nb_test,

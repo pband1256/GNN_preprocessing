@@ -7,12 +7,13 @@
 
 script=/mnt/home/lehieu1/IceCube/code/GNN/reco_create_train_val_test.py
 
-NB_TRAIN=950
-NB_VAL=0
-NB_TEST=0
-NB_SPLIT=1
+# TOTAL=20600
+NB_TRAIN=16480
+NB_VAL=2060
+NB_TEST=2060
+NB_SPLIT=10
 
-INDIR=/mnt/scratch/lehieu1/training_files/11900_SplineMPE
+INDIR=/mnt/scratch/lehieu1/training_files/21901_complete
 OUTDIR=${INDIR}/processed
 mkdir -p ${OUTDIR}
 #EMIN=0

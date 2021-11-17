@@ -105,18 +105,17 @@ def pickleList(fileList):
     
     data = [X_all,y_all,w_all,e_all,f_all,E_all]
     print("Total number of events: ", np.shape(data[1])[0])
-    print("(Non-flat) sample differential: ", np.shape(data[1])[0]-np.sum(data[1]))
-    print("Tracks: ", np.sum(data[1]))
-    print("Cascades: ", np.size(data[1])-np.sum(data[1]),'\n')
+    if args.flat == 0:
+        print("(Non-flat) sample differential: ", np.shape(data[1])[0]-np.sum(data[1]))
+        print("Tracks: ", np.sum(data[1]))
+        print("Cascades: ", np.size(data[1])-np.sum(data[1]),'\n')
+        ####### Creating flat sample
+        #data = create_equal_samples(data)
 
 
     ####### Energy cuts
     if args.emin != 0 and args.emax !=float('inf'): 
         data = energy_cut(data, args.emin, args.emax)
-
-    ####### Creating flat sample
-    if args.flat:
-        data = create_equal_samples(data)
 
     return data
 

@@ -34,7 +34,7 @@ parser.add_argument("-i", "--input",type=str,
                     dest="input_file", help="path and name of the input file")
 parser.add_argument("-o", "--output",type=str,
                     dest="output_name", help="path and name for output file")
-parser.add_argument("-g", "--gcdfile",type=str,default="/cvmfs/icecube.opensciencegrid.org/users/gen2-optical-sim/gcd/IceCubeHEX_Sunflower_240m_v3.2_ExtendedDepthRange_mDOM.GCD.i3.bz2",dest='gcdfile',help="path for GCD file")
+parser.add_argument("-g", "--gcdfile",type=str,default="/cvmfs/icecube.opensciencegrid.org/users/gen2-optical-sim/gcd/IceCubeHEX_Sunflower_240m_v3.2.2_ExtendedDepthRange_mDOM.GCD.i3.bz2",dest='gcdfile',help="path for GCD file")
 parser.add_argument("--IC86", help="flag for IC86 strings only", action='store_true')
 
 args = parser.parse_args()
@@ -67,7 +67,7 @@ def GetCoords(StringLocationList, string, dom, pmt=0):
 
 def get_observable_features(frame,StringLocations,low_window=-500,high_window=20000):
     """
-    Load observable features from IceCube files
+
     Receives:
         frame = IceCube object type from files
     Returns:
@@ -83,7 +83,7 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
     IC_strings = 86
     # G2 122 strings * 80 DOMs * 24 PMTs
     G2_strings = 122
-    array_IC = np.zeros([IC_strings*60*1+G2_strings*80*24, 9])
+    array_IC = np.zeros([IC_strings*60*1+G2_strings*80*24, 10])
 
     # Collecting all time and charge in pulse list
     for omkey, pulselist in ice_pulses:
@@ -125,9 +125,9 @@ def get_observable_features(frame,StringLocations,low_window=-500,high_window=20
         array_IC[dom_index,0:5] = coords
         array_IC[dom_index,5] = np.sum(chargelist[0]) # Sum of charge of first pulse
         array_IC[dom_index,6] = np.sum(chargelist)    # Sum of charge of all pulses
-        # array_IC[dom_index,5] = time_array[0]       # Trigger time of first pulse
-        array_IC[dom_index,7] = weighted_avg_time     # Charge weighted time mean
-        array_IC[dom_index,8] = weighted_std_time     # Charge weighted time stdev
+        array_IC[dom_index,7] = time_array[0]         # Trigger time of first pulse
+        array_IC[dom_index,8] = weighted_avg_time     # Charge weighted time mean
+        array_IC[dom_index,9] = weighted_std_time     # Charge weighted time stdev
     array_IC = np.asarray(array_IC)
     
     # Check that pulse features are nonzero
@@ -235,7 +235,6 @@ def read_files(filename_list, gcdfile):
             output_filename.append(event_file_name)
             output_energy.append(mu_energy)
             output_reco.append(reco_energy)
-            print(np.shape(output_labels))
         # close the input file once we are done
         del event_file
 

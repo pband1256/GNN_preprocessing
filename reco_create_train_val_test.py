@@ -25,25 +25,6 @@ parser.add_argument("--flat",type=float,default=1,
                     dest="flat",help="generate flat sample")
 args = parser.parse_args()
 
-# Masking non-coordinate features of feature array
-def mask_features(data,feature_ind=(3,4,5)):
-    for i in range(np.shape(data)[0]):
-        data[i][:,feature_ind] = 0
-    return data
-
-# Masking coordinates of feature array (padding inactive DOMs with 0 for pulse data)
-def mask_coordinates(data):
-    coords = []
-    batch_size = np.shape(data)[0]
-    for i in range(batch_size):
-        coords.append(data[i][:,0:3])
-    coords_list = np.unique(np.concatenate(coords),axis=0)
-    
-    for i in range(batch_size):
-        inactive_DOMs = np.array([x for x in set(tuple(x) for x in coords_list) ^ set(tuple(x) for x in coords[i])])
-        data[i] = np.concatenate([np.concatenate([inactive_DOMs,np.zeros(np.shape(inactive_DOMs))],axis=1),data[i]])
-    return data
-
 # Get rid of enough data to get a sample with 50/50 label distribution
 def create_equal_samples(data):
     data = np.asarray(data)
@@ -98,12 +79,10 @@ def pickleList(fileList):
             print("Error: file "+fileName+" failed to pickle correctly. Skipping file")
             print(e)
             continue
-    ####### Masking weights
-    #w_all = np.ones(np.shape(w_all))
-    ####### Masking features
-    # X_all = mask_features(X_all)
-    ####### Masking coordinates
-    # X_all = mask_coordinates(X_all)
+
+    # Mask index
+    # for i in range(len(X_all)):
+    #     X_all[i][:,3:5] = np.zeros(np.shape(X_all[i][:,3:5]))
     
     data = [X_all,y_all,w_all,e_all,f_all,E_all,r_all]
     print("Total number of events: ", np.shape(data[1])[0])
@@ -113,12 +92,12 @@ def pickleList(fileList):
 
 
     ####### Energy cuts
-    if args.emin != 0 and args.emax !=float('inf'): 
-        data = energy_cut(data, args.emin, args.emax)
+    #if args.emin != 0 and args.emax !=float('inf'): 
+    #    data = energy_cut(data, args.emin, args.emax)
 
     ####### Creating flat sample
-    if args.flat:
-        data = create_equal_samples(data)
+    #if args.flat:
+    #    data = create_equal_samples(data)
 
     return data
 
